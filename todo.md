@@ -19,3 +19,19 @@
 - [ ] Intégrer l'export PNG avec html2canvas
 - [ ] Tester l'application complète
 - [ ] Optimiser pour mobile (responsive design)
+
+## Nouvelles fonctionnalités demandées
+
+- [ ] Créer l'éditeur Canvas complet avec Konva
+- [ ] Ajouter la fonctionnalité d'ajout de texte sur la carte
+- [ ] Implémenter les contrôles de personnalisation (police, taille, couleur, position)
+- [ ] Créer le système d'export PNG avec html2canvas
+- [ ] Permettre le téléchargement de la carte sur téléphone
+- [ ] Tester l'ensemble du flux utilisateur (sélection → édition → export)
+
+## Améliorations finales demandées
+
+- [x] Ajouter des effets typographiques (ombres, contours, dégradés)
+- [x] Créer plusieurs modes de texte (classique, moderne, élégant, festif)
+- [x] Tester l'export PNG avec les nouveaux effets
+- [ ] Publier l'application

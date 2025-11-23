@@ -3,7 +3,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import Landing from "./pages/Landing";
-import Editor from "./pages/Editor";
+import Editor from "./pages/EditorEnhanced";
 
 function Router() {
   return (
