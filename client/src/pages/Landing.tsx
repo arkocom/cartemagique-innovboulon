@@ -9,6 +9,11 @@ export default function Landing() {
         <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-green-500/10 rounded-full blur-[120px]" />
       </div>
 
+      {/* Logo en haut */}
+      <div className="absolute top-8 left-8 z-20">
+        <img src="/logo-innovboulon.jpg" alt="Innov'BOULON" className="h-16 w-16 rounded-full shadow-lg" />
+      </div>
+
       {/* Contenu principal */}
       <div className="z-10 text-center max-w-2xl animate-fade-in">
         <h1 
@@ -29,6 +34,13 @@ export default function Landing() {
             </button>
           </Link>
         </div>
+      </div>
+
+      {/* Footer avec crédit */}
+      <div className="absolute bottom-8 z-20 text-center">
+        <p className="text-sm text-gray-400">
+          Offert par <span className="font-bold text-cyan-400">Innov'BOULON</span> • Développé par <span className="font-bold text-white">Manus</span>
+        </p>
       </div>
     </div>
   );

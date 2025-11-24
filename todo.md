@@ -34,4 +34,10 @@
 - [x] Ajouter des effets typographiques (ombres, contours, dégradés)
 - [x] Créer plusieurs modes de texte (classique, moderne, élégant, festif)
 - [x] Tester l'export PNG avec les nouveaux effets
-- [ ] Publier l'application
+- [x] Publier l'application
+
+## Intégration du logo Innov'BOULON
+
+- [x] Copier le logo dans le dossier public
+- [x] Mettre à jour APP_LOGO dans const.ts
+- [x] Ajouter le crédit "développé par Manus" dans le footer
