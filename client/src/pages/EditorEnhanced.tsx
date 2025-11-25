@@ -55,6 +55,8 @@ export default function EditorEnhanced() {
   const [fontSize, setFontSize] = useState(48);
   const [textStyle, setTextStyle] = useState<TextStyle>('modern');
   const [isExporting, setIsExporting] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string>('');
   
   const selectedThemeId = useAppStore((state) => state.selectedThemeId);
   const selectedTheme = themes.find((t) => t.id === selectedThemeId) || themes[0];
@@ -140,7 +142,7 @@ export default function EditorEnhanced() {
     setIsExporting(true);
     
     try {
-      const dataUrl = canvasRef.current.toDataURL('image/png');
+      const dataUrl = canvasRef.current.toDataURL('image/png', 1.0);
       
       if (!dataUrl || dataUrl === 'data:,') {
         alert('Erreur: Le canvas est vide.');
@@ -148,19 +150,52 @@ export default function EditorEnhanced() {
         return;
       }
       
-      const link = document.createElement('a');
-      link.download = `carte-magique-${Date.now()}.png`;
-      link.href = dataUrl;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      alert('✅ Carte téléchargée avec succès !');
+      // Afficher la prévisualisation
+      setPreviewUrl(dataUrl);
+      setShowPreview(true);
       setIsExporting(false);
     } catch (error) {
       console.error('Erreur lors de l\'export:', error);
       alert('Une erreur est survenue lors de l\'export.');
       setIsExporting(false);
+    }
+  };
+
+  const handleDownload = () => {
+    if (!previewUrl) return;
+    
+    const link = document.createElement('a');
+    link.download = `carte-magique-${Date.now()}.png`;
+    link.href = previewUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleShare = async () => {
+    if (!previewUrl) return;
+    
+    try {
+      // Convertir dataURL en Blob
+      const response = await fetch(previewUrl);
+      const blob = await response.blob();
+      const file = new File([blob], `carte-magique-${Date.now()}.png`, { type: 'image/png' });
+      
+      // Vérifier si l'API Web Share est disponible
+      if (navigator.share && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: 'Ma carte de vœux',
+          text: 'Découvrez ma carte de vœux personnalisée !',
+          files: [file],
+        });
+      } else {
+        // Fallback : téléchargement simple
+        handleDownload();
+      }
+    } catch (error) {
+      console.error('Erreur lors du partage:', error);
+      // Fallback : téléchargement simple
+      handleDownload();
     }
   };
 
@@ -187,6 +222,51 @@ export default function EditorEnhanced() {
         </h1>
         <div className="w-20"></div>
       </header>
+
+      {/* Modal de prévisualisation */}
+      {showPreview && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-800 rounded-lg p-6 max-w-2xl w-full">
+            <h2 className="text-2xl font-bold mb-4 text-center">Votre carte est prête ! 🎉</h2>
+            <div className="mb-6 flex justify-center">
+              <img 
+                src={previewUrl} 
+                alt="Prévisualisation" 
+                className="max-w-full h-auto rounded-lg shadow-xl"
+                style={{ maxHeight: '60vh' }}
+              />
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button
+                onClick={handleShare}
+                size="lg"
+                className="px-6 py-3 bg-gradient-to-r from-green-600 to-blue-500 hover:from-green-700 hover:to-blue-600"
+              >
+                📱 Partager / Télécharger
+              </Button>
+              <Button
+                onClick={handleDownload}
+                variant="outline"
+                size="lg"
+                className="px-6 py-3"
+              >
+                💾 Télécharger uniquement
+              </Button>
+              <Button
+                onClick={() => setShowPreview(false)}
+                variant="outline"
+                size="lg"
+                className="px-6 py-3"
+              >
+                ✏️ Modifier
+              </Button>
+            </div>
+            <p className="text-sm text-gray-400 text-center mt-4">
+              💡 Astuce : Utilisez "Partager" pour envoyer directement par WhatsApp, email, etc.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Contenu principal */}
       <main className="py-8">
@@ -315,7 +395,7 @@ export default function EditorEnhanced() {
                 size="lg"
                 className="px-8 py-4 bg-gradient-to-r from-green-600 to-blue-500 hover:from-green-700 hover:to-blue-600"
               >
-                {isExporting ? '⏳ Export en cours...' : '📥 Télécharger ma carte'}
+                {isExporting ? '⏳ Préparation...' : '📥 Télécharger ma carte'}
               </Button>
             </div>
           </>

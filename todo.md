@@ -41,3 +41,9 @@
 - [x] Copier le logo dans le dossier public
 - [x] Mettre à jour APP_LOGO dans const.ts
 - [x] Ajouter le crédit "développé par Manus" dans le footer
+
+## Correction du téléchargement mobile
+
+- [x] Améliorer la fonction d'export pour mieux supporter les appareils mobiles
+- [x] Ajouter une prévisualisation de l'image avant téléchargement
+- [x] Offrir une option de partage direct en plus du téléchargement
