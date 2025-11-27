@@ -47,3 +47,11 @@
 - [x] Améliorer la fonction d'export pour mieux supporter les appareils mobiles
 - [x] Ajouter une prévisualisation de l'image avant téléchargement
 - [x] Offrir une option de partage direct en plus du téléchargement
+
+## Améliorations de l'éditeur - Drag & Drop et blocs multiples
+
+- [x] Implémenter le système de blocs de texte multiples
+- [x] Ajouter le drag & drop pour déplacer les blocs de texte
+- [x] Créer une interface pour ajouter/supprimer des blocs
+- [x] Permettre la personnalisation individuelle de chaque bloc (couleur, taille, style)
+- [x] Tester le système sur mobile et desktop

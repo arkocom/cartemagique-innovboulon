@@ -3,13 +3,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import Landing from "./pages/Landing";
-import Editor from "./pages/EditorEnhanced";
+import EditorAdvanced from "./pages/EditorAdvanced";
 
 function Router() {
   return (
     <Switch>
       <Route path={"/"} component={Landing} />
-      <Route path={"/editor"} component={Editor} />
+      <Route path={"/editor"} component={EditorAdvanced} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
