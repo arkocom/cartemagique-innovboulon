@@ -55,3 +55,12 @@
 - [x] Créer une interface pour ajouter/supprimer des blocs
 - [x] Permettre la personnalisation individuelle de chaque bloc (couleur, taille, style)
 - [x] Tester le système sur mobile et desktop
+
+## Upload d'images personnalisées (logo, photo)
+
+- [x] Implémenter l'upload d'images (logo, photo) avec support mobile
+- [x] Ajouter le drag & drop tactile pour positionner les images
+- [x] Permettre le redimensionnement des images
+- [x] Ajouter la rotation des images
+- [x] Tester sur smartphone et desktop
+- [x] Vérifier la compatibilité avec tous les navigateurs mobiles
