@@ -39,7 +39,7 @@ export default function Landing() {
       {/* Footer avec crédit */}
       <div className="absolute bottom-8 z-20 text-center">
         <p className="text-sm text-gray-400">
-          Offert par <span className="font-bold text-cyan-400">Innov'BOULON</span> • Développé par <span className="font-bold text-white">Manus</span>
+          Offert par <a href="https://innov-boulon.fr" target="_blank" rel="noopener noreferrer" className="font-bold text-cyan-400 hover:text-cyan-300 transition-colors">Innov'BOULON</a> • Développé par <span className="font-bold text-white">Manus</span>
         </p>
       </div>
     </div>
