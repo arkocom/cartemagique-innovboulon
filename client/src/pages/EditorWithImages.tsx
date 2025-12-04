@@ -563,10 +563,10 @@ export default function EditorWithImages() {
               </p>
             </div>
 
-            <div className="max-w-6xl mx-auto px-4">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="max-w-6xl mx-auto px-2 md:px-4">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-6">
                 {/* Carte */}
-                <div className="lg:col-span-2">
+                <div className="lg:col-span-2 order-2 lg:order-1">
                   <div className="bg-gray-800 rounded-lg p-4 flex items-center justify-center">
                     <div style={{ maxWidth: '100%' }} ref={containerRef}>
                       <canvas
@@ -596,7 +596,7 @@ export default function EditorWithImages() {
                 </div>
 
                 {/* Panneau de contrôle */}
-                <div className="space-y-4 overflow-y-auto max-h-[80vh]">
+                <div className="space-y-3 md:space-y-4 overflow-y-auto max-h-[80vh] order-1 lg:order-2">
                   {/* Upload d'images */}
                   <div className="bg-gray-800 rounded-lg p-4 space-y-3">
                     <h3 className="text-lg font-bold flex items-center gap-2">
@@ -605,8 +605,8 @@ export default function EditorWithImages() {
                     </h3>
                     <Button
                       onClick={() => fileInputRef.current?.click()}
-                      size="sm"
-                      className="w-full bg-blue-600 hover:bg-blue-700"
+                      size="lg"
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-base md:text-sm md:py-2 py-3"
                     >
                       <Upload className="w-4 h-4 mr-2" />
                       Ajouter une image
@@ -623,7 +623,7 @@ export default function EditorWithImages() {
                         {imageElements.map((img) => (
                           <div
                             key={img.id}
-                            className={`flex items-center justify-between p-2 rounded border-2 transition-all cursor-pointer ${
+                            className={`flex items-center justify-between p-3 md:p-2 rounded border-2 transition-all cursor-pointer touch-target ${
                               selectedImageId === img.id
                                 ? 'border-white bg-white/10'
                                 : 'border-gray-600 bg-gray-700 hover:border-gray-500'
@@ -769,7 +769,7 @@ export default function EditorWithImages() {
                             <button
                               key={styleKey}
                               onClick={() => updateSelectedBlock({ style: styleKey })}
-                              className={`px-4 py-2 rounded-lg border-2 transition-all text-sm ${
+                              className={`px-4 py-3 md:py-2 rounded-lg border-2 transition-all text-sm md:text-xs ${
                                 selectedBlock.style === styleKey
                                   ? 'border-white bg-white/10 text-white'
                                   : 'border-gray-600 bg-gray-700 text-gray-300 hover:border-gray-500'
@@ -789,7 +789,7 @@ export default function EditorWithImages() {
                               <button
                                 key={color}
                                 onClick={() => updateSelectedBlock({ color })}
-                                className={`w-10 h-10 rounded-full border-2 ${
+                                className={`w-12 h-12 md:w-10 md:h-10 rounded-full border-2 ${
                                   selectedBlock.color === color ? 'border-white ring-2 ring-white' : 'border-gray-600'
                                 }`}
                                 style={{ backgroundColor: color }}
@@ -816,22 +816,14 @@ export default function EditorWithImages() {
               </div>
             </div>
 
-            <div className="text-center mt-10 space-x-4">
+            <div className="text-center mt-6 md:mt-10 space-x-2 md:space-x-4">
               <Button
                 onClick={() => setShowCanvas(false)}
                 variant="outline"
-                size="lg"
-                className="px-8 py-4"
+                size="sm"
+                className="px-4 md:px-8 py-2 md:py-4 text-sm md:text-base"
               >
                 ← Changer de fond
-              </Button>
-              <Button
-                onClick={handleExport}
-                disabled={isExporting}
-                size="lg"
-                className="px-8 py-4 bg-gradient-to-r from-green-600 to-blue-500 hover:from-green-700 hover:to-blue-600"
-              >
-                {isExporting ? '⏳ Préparation...' : '📥 Télécharger ma carte'}
               </Button>
             </div>
           </>
