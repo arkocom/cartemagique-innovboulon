@@ -163,6 +163,7 @@ export default function EditorWithImages() {
   }, [showCanvas, textBlocks, imageElements, selectedTheme.image]);
 
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -212,6 +213,7 @@ export default function EditorWithImages() {
 
   const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isDragging) return;
+    e.preventDefault();
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -241,11 +243,13 @@ export default function EditorWithImages() {
     }
   };
 
-  const handleCanvasMouseUp = () => {
+  const handleCanvasMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
     setIsDragging(false);
   };
 
   const handleCanvasTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
     const canvas = canvasRef.current;
     if (!canvas || e.touches.length !== 1) return;
 
@@ -294,6 +298,7 @@ export default function EditorWithImages() {
   };
 
   const handleCanvasTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
     if (!isDragging || e.touches.length !== 1) return;
 
     const canvas = canvasRef.current;
@@ -324,7 +329,8 @@ export default function EditorWithImages() {
     }
   };
 
-  const handleCanvasTouchEnd = () => {
+  const handleCanvasTouchEnd = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
     setIsDragging(false);
   };
 
@@ -816,12 +822,20 @@ export default function EditorWithImages() {
               </div>
             </div>
 
-            <div className="text-center mt-6 md:mt-10 space-x-2 md:space-x-4">
+            <div className="text-center mt-6 md:mt-10 flex flex-col sm:flex-row gap-2 md:gap-4 justify-center">
+              <Button
+                onClick={handleExport}
+                disabled={isExporting}
+                size="lg"
+                className="px-6 md:px-8 py-3 md:py-4 text-base md:text-base bg-gradient-to-r from-green-600 to-blue-500 hover:from-green-700 hover:to-blue-600"
+              >
+                {isExporting ? '⏳ Préparation...' : '📥 Partager ma carte'}
+              </Button>
               <Button
                 onClick={() => setShowCanvas(false)}
                 variant="outline"
-                size="sm"
-                className="px-4 md:px-8 py-2 md:py-4 text-sm md:text-base"
+                size="lg"
+                className="px-6 md:px-8 py-3 md:py-4 text-base md:text-base"
               >
                 ← Changer de fond
               </Button>
