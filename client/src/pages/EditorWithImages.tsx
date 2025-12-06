@@ -574,7 +574,7 @@ export default function EditorWithImages() {
                 {/* Carte */}
                 <div className="lg:col-span-2 order-2 lg:order-1">
                   <div className="bg-gray-800 rounded-lg p-4 flex items-center justify-center">
-                    <div style={{ maxWidth: '100%' }} ref={containerRef}>
+                    <div style={{ aspectRatio: '4/5', maxWidth: '100%', width: '100%' }} ref={containerRef}>
                       <canvas
                         ref={canvasRef}
                         width={600}
@@ -587,11 +587,12 @@ export default function EditorWithImages() {
                         onTouchMove={handleCanvasTouchMove}
                         onTouchEnd={handleCanvasTouchEnd}
                         style={{ 
-                          maxWidth: '100%', 
-                          height: 'auto', 
+                          width: '100%', 
+                          height: '100%', 
                           display: 'block',
                           cursor: isDragging ? 'grabbing' : 'grab',
-                          touchAction: 'none'
+                          touchAction: 'none',
+                          objectFit: 'contain'
                         }}
                       />
                     </div>
