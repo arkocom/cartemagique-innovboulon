@@ -75,10 +75,10 @@ export default function EditorWithImages() {
     {
       id: '1',
       text: 'Joyeux Noël !',
-      x: 300,
-      y: 375,
+      x: 200,
+      y: 300,
       color: '#ffffff',
-      fontSize: 48,
+      fontSize: 32,
       style: 'modern',
     },
   ]);
@@ -115,8 +115,8 @@ export default function EditorWithImages() {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
-      ctx.clearRect(0, 0, 600, 750);
-      ctx.drawImage(img, 0, 0, 600, 750);
+      ctx.clearRect(0, 0, 400, 600);
+      ctx.drawImage(img, 0, 0, 400, 600);
       
       // Dessiner les images
       imageElements.forEach((imgElem) => {
@@ -168,8 +168,8 @@ export default function EditorWithImages() {
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const scaleX = 600 / rect.width;
-    const scaleY = 750 / rect.height;
+    const scaleX = 400 / rect.width;
+    const scaleY = 600 / rect.height;
     const x = (e.clientX - rect.left) * scaleX;
     const y = (e.clientY - rect.top) * scaleY;
 
@@ -219,8 +219,8 @@ export default function EditorWithImages() {
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const scaleX = 600 / rect.width;
-    const scaleY = 750 / rect.height;
+    const scaleX = 400 / rect.width;
+    const scaleY = 600 / rect.height;
     const x = (e.clientX - rect.left) * scaleX;
     const y = (e.clientY - rect.top) * scaleY;
 
@@ -254,8 +254,8 @@ export default function EditorWithImages() {
     if (!canvas || e.touches.length !== 1) return;
 
     const rect = canvas.getBoundingClientRect();
-    const scaleX = 600 / rect.width;
-    const scaleY = 750 / rect.height;
+    const scaleX = 400 / rect.width;
+    const scaleY = 600 / rect.height;
     const x = (e.touches[0].clientX - rect.left) * scaleX;
     const y = (e.touches[0].clientY - rect.top) * scaleY;
 
@@ -305,8 +305,8 @@ export default function EditorWithImages() {
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const scaleX = 600 / rect.width;
-    const scaleY = 750 / rect.height;
+    const scaleX = 400 / rect.width;
+    const scaleY = 600 / rect.height;
     const x = (e.touches[0].clientX - rect.left) * scaleX;
     const y = (e.touches[0].clientY - rect.top) * scaleY;
 
@@ -338,10 +338,10 @@ export default function EditorWithImages() {
     const newBlock: TextBlock = {
       id: Date.now().toString(),
       text: 'Nouveau texte',
-      x: 300,
-      y: 200,
+      x: 200,
+      y: 150,
       color: '#ffffff',
-      fontSize: 36,
+      fontSize: 24,
       style: 'modern',
     };
     setTextBlocks([...textBlocks, newBlock]);
@@ -574,11 +574,11 @@ export default function EditorWithImages() {
                 {/* Carte */}
                 <div className="lg:col-span-2 order-2 lg:order-1">
                   <div className="bg-gray-800 rounded-lg p-4 flex items-center justify-center">
-                    <div style={{ aspectRatio: '4/5', maxWidth: '100%', width: '100%' }} ref={containerRef}>
+                    <div style={{ aspectRatio: '2/3', maxWidth: '100%', width: '100%', maxHeight: '80vh' }} ref={containerRef}>
                       <canvas
                         ref={canvasRef}
-                        width={600}
-                        height={750}
+                        width={400}
+                        height={600}
                         onMouseDown={handleCanvasMouseDown}
                         onMouseMove={handleCanvasMouseMove}
                         onMouseUp={handleCanvasMouseUp}
