@@ -93,6 +93,7 @@ export default function EditorWithImages() {
   const [isExporting, setIsExporting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [showSaveModal, setShowSaveModal] = useState(false);
   const [frameWidth, setFrameWidth] = useState(0);
   const [showFrame, setShowFrame] = useState(false);
   const [activeTab, setActiveTab] = useState<'carte' | 'parametres'>('carte');
@@ -535,9 +536,8 @@ export default function EditorWithImages() {
           files: [file],
         });
       } else {
-        console.log('API de partage non supportée, repli sur le téléchargement');
-        alert('Le partage natif n\'est pas supporté sur cet appareil ou navigateur. L\'image va être téléchargée à la place.');
-        handleDownload();
+        console.log('API de partage non supportée, ouverture du modal de sauvegarde');
+        setShowSaveModal(true);
       }
     } catch (error) {
       console.error('Erreur lors du partage:', error);
@@ -600,6 +600,50 @@ export default function EditorWithImages() {
         </div>
       )}
 
+      {/* Modal de sauvegarde manuelle (Mobile) */}
+      {showSaveModal && (
+        <div className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full text-center">
+            <h2 className="text-2xl font-bold mb-2">Sauvegarder votre carte</h2>
+            <p className="text-yellow-400 mb-4 font-medium">
+              👆 Maintenez votre doigt sur l'image ci-dessous pour l'enregistrer dans votre galerie.
+            </p>
+            
+            <div className="mb-6 flex justify-center bg-gray-900 p-2 rounded-lg">
+              <img 
+                src={previewUrl} 
+                alt="Carte finale" 
+                className="max-w-full h-auto rounded shadow-lg"
+                style={{ maxHeight: '50vh' }}
+              />
+            </div>
+            
+            <div className="flex flex-col gap-3">
+              <Button
+                onClick={() => {
+                  const link = document.createElement('a');
+                  link.download = `carte-magique-${Date.now()}.png`;
+                  link.href = previewUrl;
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}
+                className="w-full bg-blue-600 hover:bg-blue-700"
+              >
+                💾 Essayer le téléchargement direct
+              </Button>
+              <Button
+                onClick={() => setShowSaveModal(false)}
+                variant="outline"
+                className="w-full"
+              >
+                Fermer
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal de prévisualisation */}
       {showPreview && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
@@ -619,15 +663,15 @@ export default function EditorWithImages() {
                 size="lg"
                 className="px-6 py-3 bg-gradient-to-r from-green-600 to-blue-500 hover:from-green-700 hover:to-blue-600"
               >
-                📱 Partager / Télécharger
+                📱 Partager / Sauvegarder
               </Button>
               <Button
-                onClick={handleDownload}
+                onClick={() => setShowSaveModal(true)}
                 variant="outline"
                 size="lg"
                 className="px-6 py-3"
               >
-                💾 Télécharger uniquement
+                💾 Sauvegarde manuelle
               </Button>
               <Button
                 onClick={() => setShowPreview(false)}
@@ -639,7 +683,7 @@ export default function EditorWithImages() {
               </Button>
             </div>
             <p className="text-sm text-gray-400 text-center mt-4">
-              💡 Astuce : Utilisez "Partager" pour envoyer directement par WhatsApp, email, etc.
+              💡 Astuce : Si le téléchargement ne démarre pas, utilisez "Sauvegarde manuelle".
             </p>
           </div>
         </div>
