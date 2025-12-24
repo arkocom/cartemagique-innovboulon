@@ -499,14 +499,25 @@ export default function EditorWithImages() {
   };
 
   const handleDownload = () => {
-    if (!previewUrl) return;
+    console.log('Tentative de téléchargement...');
+    if (!previewUrl) {
+      console.error('Aucune URL de prévisualisation disponible');
+      alert('Erreur : Impossible de télécharger l\'image. Veuillez réessayer.');
+      return;
+    }
     
-    const link = document.createElement('a');
-    link.download = `carte-magique-${Date.now()}.png`;
-    link.href = previewUrl;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      const link = document.createElement('a');
+      link.download = `carte-magique-${Date.now()}.png`;
+      link.href = previewUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      console.log('Téléchargement déclenché');
+    } catch (error) {
+      console.error('Erreur lors du téléchargement:', error);
+      alert('Le téléchargement a échoué. Essayez de faire un appui long sur l\'image pour l\'enregistrer.');
+    }
   };
 
   const handleShare = async () => {
@@ -524,6 +535,8 @@ export default function EditorWithImages() {
           files: [file],
         });
       } else {
+        console.log('API de partage non supportée, repli sur le téléchargement');
+        alert('Le partage natif n\'est pas supporté sur cet appareil ou navigateur. L\'image va être téléchargée à la place.');
         handleDownload();
       }
     } catch (error) {
