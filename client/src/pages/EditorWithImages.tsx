@@ -71,6 +71,7 @@ interface ImageElement {
   height: number;
   rotation: number;
   filter?: 'none' | 'grayscale' | 'sepia' | 'vintage';
+  tint?: string; // Hex color for tinting
 }
 
 export default function EditorWithImages() {
@@ -101,6 +102,7 @@ export default function EditorWithImages() {
   const [frameWidth, setFrameWidth] = useState(0);
   const [showFrame, setShowFrame] = useState(false);
   const [photoFilter, setPhotoFilter] = useState<'none' | 'grayscale' | 'sepia' | 'vintage'>('none');
+  const [stickerTint, setStickerTint] = useState<string>('original'); // 'original', '#FFD700', '#FF0000', etc.
   const [darkMode, setDarkMode] = useState(true);
   const [activeTab, setActiveTab] = useState<'carte' | 'parametres'>('carte');
   const [showTemplates, setShowTemplates] = useState(false);
@@ -216,8 +218,34 @@ export default function EditorWithImages() {
               ctx.filter = 'sepia(50%) contrast(120%) brightness(90%)';
             }
           }
+
+          // Apply tint if specified and not 'original'
+          if (imgElem.tint && imgElem.tint !== 'original') {
+            // Create a temporary canvas for tinting
+            const tintCanvas = document.createElement('canvas');
+            tintCanvas.width = image.width;
+            tintCanvas.height = image.height;
+            const tintCtx = tintCanvas.getContext('2d');
+            
+            if (tintCtx) {
+              // Draw original image
+              tintCtx.drawImage(image, 0, 0);
+              
+              // Set composite operation to source-in to only draw on non-transparent pixels
+              tintCtx.globalCompositeOperation = 'source-in';
+              tintCtx.fillStyle = imgElem.tint;
+              tintCtx.fillRect(0, 0, tintCanvas.width, tintCanvas.height);
+              
+              // Draw the tinted version
+              ctx.drawImage(tintCanvas, -imgElem.width / 2, -imgElem.height / 2, imgElem.width, imgElem.height);
+            } else {
+              // Fallback if tinting fails
+              ctx.drawImage(image, -imgElem.width / 2, -imgElem.height / 2, imgElem.width, imgElem.height);
+            }
+          } else {
+            ctx.drawImage(image, -imgElem.width / 2, -imgElem.height / 2, imgElem.width, imgElem.height);
+          }
           
-          ctx.drawImage(image, -imgElem.width / 2, -imgElem.height / 2, imgElem.width, imgElem.height);
           ctx.restore();
         };
       });
@@ -275,7 +303,7 @@ export default function EditorWithImages() {
       }
     };
     // img.src est déjà défini plus haut
-  }, [showCanvas, textBlocks, imageElements, selectedTheme.image, showFrame, frameWidth]);
+  }, [showCanvas, textBlocks, imageElements, selectedTheme.image, showFrame, frameWidth, stickerTint]);
 
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     e.preventDefault();
@@ -761,17 +789,48 @@ export default function EditorWithImages() {
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {STARTER_TEMPLATES.map((template, index) => (
-                <div 
-                  key={template.id}
-                  className={`bg-gray-700 rounded-lg p-4 cursor-pointer hover:bg-gray-600 transition-all border-2 border-transparent hover:border-blue-500 animate-slide-up delay-${(index + 1) * 100}`}
-                  onClick={() => applyTemplate(template)}
-                >
-                  <div className="text-4xl mb-3 text-center">{template.icon}</div>
-                  <h3 className="text-xl font-bold text-center mb-2">{template.name}</h3>
-                  <p className="text-gray-400 text-center text-sm">{template.description}</p>
-                </div>
-              ))}
+              {STARTER_TEMPLATES.map((template, index) => {
+                // Seasonal Logic
+                const currentMonth = new Date().getMonth(); // 0-11
+                const isDecember = currentMonth === 11;
+                const isJanuary = currentMonth === 0;
+                const isFebruary = currentMonth === 1;
+
+                let isSeasonal = false;
+                let seasonLabel = '';
+
+                if (isDecember && (template.id === 'family' || template.id === 'fun')) {
+                  isSeasonal = true;
+                  seasonLabel = '🎄 Spécial Noël';
+                } else if (isJanuary && (template.id === 'pro' || template.id === 'minimal')) {
+                  isSeasonal = true;
+                  seasonLabel = '🥂 Bonne Année';
+                } else if (isFebruary && template.id === 'love') {
+                  isSeasonal = true;
+                  seasonLabel = '❤️ St Valentin';
+                }
+
+                return (
+                  <div 
+                    key={template.id}
+                    className={`relative bg-gray-700 rounded-lg p-4 cursor-pointer hover:bg-gray-600 transition-all border-2 animate-slide-up delay-${(index + 1) * 100} ${
+                      isSeasonal 
+                        ? 'border-amber-400 ring-2 ring-amber-400/20' 
+                        : 'border-transparent hover:border-blue-500'
+                    }`}
+                    onClick={() => applyTemplate(template)}
+                  >
+                    {isSeasonal && (
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-amber-400 text-black text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                        {seasonLabel}
+                      </div>
+                    )}
+                    <div className="text-4xl mb-3 text-center">{template.icon}</div>
+                    <h3 className="text-xl font-bold text-center mb-2">{template.name}</h3>
+                    <p className="text-gray-400 text-center text-sm">{template.description}</p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -1066,6 +1125,43 @@ export default function EditorWithImages() {
                               >
                                 <span className="text-lg mb-1">{filter.icon}</span>
                                 {filter.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Tint Control */}
+                        <div>
+                          <Label className={darkMode ? "text-gray-300" : "text-gray-700"}>Teinte du sticker</Label>
+                          <div className="grid grid-cols-5 gap-2 mt-1">
+                            {[
+                              { id: 'original', color: 'transparent', label: 'Orig.' },
+                              { id: '#FFD700', color: '#FFD700', label: 'Or' },
+                              { id: '#C0C0C0', color: '#C0C0C0', label: 'Arg.' },
+                              { id: '#FF0000', color: '#FF0000', label: 'Rge' },
+                              { id: '#FFFFFF', color: '#FFFFFF', label: 'Blc' },
+                            ].map((tint) => (
+                              <button
+                                key={tint.id}
+                                onClick={() => updateSelectedImage({ tint: tint.id })}
+                                className={`flex flex-col items-center justify-center p-2 rounded text-xs border transition-colors ${
+                                  (selectedImage.tint || 'original') === tint.id
+                                    ? 'border-blue-500 bg-blue-500/20 text-blue-400'
+                                    : darkMode 
+                                      ? 'border-gray-600 hover:bg-gray-700 text-gray-300' 
+                                      : 'border-gray-300 hover:bg-gray-200 text-gray-700'
+                                }`}
+                              >
+                                <div 
+                                  className="w-6 h-6 rounded-full mb-1 border border-gray-500" 
+                                  style={{ 
+                                    backgroundColor: tint.color === 'transparent' ? 'transparent' : tint.color,
+                                    backgroundImage: tint.color === 'transparent' ? 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)' : 'none',
+                                    backgroundSize: '8px 8px',
+                                    backgroundPosition: '0 0, 0 4px, 4px -4px, -4px 0px'
+                                  }}
+                                />
+                                {tint.label}
                               </button>
                             ))}
                           </div>
