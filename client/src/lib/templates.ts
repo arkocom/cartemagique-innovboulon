@@ -16,34 +16,35 @@ export const STARTER_TEMPLATES: CardTemplate[] = [
     name: 'Vœux Pro',
     icon: '💼',
     description: 'Sobre et élégant pour vos partenaires.',
+    themeId: 'pro-1',
     textBlocks: [
       {
         text: 'Meilleurs Vœux 2025',
         x: 200,
-        y: 150,
-        color: '#FFFFFF',
-        fontSize: 36,
+        y: 200,
+        color: '#1e293b', // Dark slate
+        fontSize: 32,
         style: 'elegant',
         align: 'center'
       },
       {
-        text: 'Toute l\'équipe vous souhaite\nune excellente année.',
+        text: 'Toute l\'équipe vous souhaite\nune excellente année de réussite.',
         x: 200,
         y: 300,
-        color: '#FFFFFF',
-        fontSize: 20,
+        color: '#334155', // Slate 700
+        fontSize: 18,
         style: 'classic',
         align: 'center'
       },
       {
-        text: 'Innov\'BOULON',
+        text: 'Votre Entreprise',
         x: 200,
-        y: 500,
-        color: '#FFD700', // Or
-        fontSize: 24,
+        y: 450,
+        color: '#0f172a', // Slate 900
+        fontSize: 22,
         style: 'modern',
-      align: 'center',
-    },
+        align: 'center',
+      },
     ]
   },
   {
@@ -51,34 +52,38 @@ export const STARTER_TEMPLATES: CardTemplate[] = [
     name: 'Famille',
     icon: '👨‍👩‍👧‍👦',
     description: 'Chaleureux pour vos proches.',
+    themeId: 'famille-1',
     textBlocks: [
       {
         text: 'Joyeux Noël !',
         x: 200,
-        y: 100,
-        color: '#FF0000', // Rouge
-        fontSize: 42,
+        y: 150,
+        color: '#be123c', // Rose red
+        fontSize: 38,
         style: 'festive',
         align: 'center'
       },
       {
         text: 'Plein de bonheur et d\'amour\npour cette nouvelle année.',
         x: 200,
-        y: 450,
-        color: '#FFFFFF',
-        fontSize: 22,
+        y: 300,
+        color: '#374151', // Gray 700
+        fontSize: 20,
         style: 'classic',
         align: 'center'
       },
       {
         text: 'La famille Martin',
         x: 200,
-        y: 550,
-        color: '#FFFFFF',
-        fontSize: 18,
+        y: 450,
+        color: '#1f2937', // Gray 800
+        fontSize: 24,
         style: 'modern',
         align: 'center'
       }
+    ],
+    stickers: [
+      { x: 50, y: 50, src: '', scale: 0.8, rotation: -15 }, // Placeholder for sticker logic if needed
     ]
   },
   {

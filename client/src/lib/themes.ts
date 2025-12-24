@@ -83,4 +83,23 @@ export const themes: Theme[] = [
   createTheme('artdeco-3', 'Art Déco 3', 'Arches dorées', '/themes/artdeco/artdeco-3.jpg'),
   createTheme('artdeco-4', 'Art Déco 4', 'Bulles champagne', '/themes/artdeco/artdeco-4.jpg'),
   createTheme('artdeco-5', 'Art Déco 5', 'Émeraude & Or', '/themes/artdeco/artdeco-5.jpg'),
+
+  // 💼 Pro (10)
+  createTheme('pro-1', 'Pro 1', 'Cadre Or & Bleu', '/themes/pro/pro-1.jpg'),
+  createTheme('pro-2', 'Pro 2', 'Minimaliste Gris', '/themes/pro/pro-2.jpg'),
+  createTheme('pro-3', 'Pro 3', 'Réseau Tech', '/themes/pro/pro-3.jpg'),
+  createTheme('pro-4', 'Pro 4', 'Papier Exécutif', '/themes/pro/pro-4.jpg'),
+  createTheme('pro-5', 'Pro 5', 'Startup Dynamique', '/themes/pro/pro-5.jpg'),
+  createTheme('pro-6', 'Pro 6', 'Hexagones', '/themes/pro/pro-6.jpg'),
+  createTheme('pro-7', 'Pro 7', 'Luxe Noir', '/themes/pro/pro-7.jpg'),
+  createTheme('pro-8', 'Pro 8', 'Bandeau Bleu', '/themes/pro/pro-8.jpg'),
+  createTheme('pro-9', 'Pro 9', 'Architecte', '/themes/pro/pro-9.jpg'),
+  createTheme('pro-10', 'Pro 10', 'Bureau Moderne', '/themes/pro/pro-10.jpg'),
+
+  // ❤️ Famille (5)
+  createTheme('famille-1', 'Famille 1', 'Scrapbooking', '/themes/famille/famille-1.jpg'),
+  createTheme('famille-2', 'Famille 2', 'Bois Rustique', '/themes/famille/famille-2.jpg'),
+  createTheme('famille-3', 'Famille 3', 'Album Photo', '/themes/famille/famille-3.jpg'),
+  createTheme('famille-4', 'Famille 4', 'Animaux Mignons', '/themes/famille/famille-4.jpg'),
+  createTheme('famille-5', 'Famille 5', 'Fleurs Douces', '/themes/famille/famille-5.jpg'),
 ];

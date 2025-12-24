@@ -29,4 +29,4 @@ export interface CanvasElement {
   scaleY: number;
 }
 
-export type Category = 'noel' | 'nouvel-an' | 'hiver' | 'feerie' | 'nature' | 'artdeco';
+export type Category = 'noel' | 'nouvel-an' | 'hiver' | 'feerie' | 'nature' | 'artdeco' | 'pro' | 'famille' | 'festifs';
