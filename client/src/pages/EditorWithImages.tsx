@@ -93,6 +93,7 @@ export default function EditorWithImages() {
   const [isExporting, setIsExporting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [frameWidth, setFrameWidth] = useState(0);
   const [showFrame, setShowFrame] = useState(false);
@@ -121,7 +122,10 @@ export default function EditorWithImages() {
     if (!ctx) return;
 
     const img = new Image();
+    // IMPORTANT: crossOrigin doit être défini AVANT src pour éviter le tainting du canvas
     img.crossOrigin = 'anonymous';
+    img.src = selectedTheme.image;
+    
     img.onload = () => {
       ctx.clearRect(0, 0, 400, 600);
       ctx.drawImage(img, 0, 0, 400, 600);
@@ -130,6 +134,8 @@ export default function EditorWithImages() {
       imageElements.forEach((imgElem) => {
         const image = new Image();
         image.crossOrigin = 'anonymous';
+        image.src = imgElem.src;
+        
         image.onload = () => {
           ctx.save();
           ctx.translate(imgElem.x + imgElem.width / 2, imgElem.y + imgElem.height / 2);
@@ -137,7 +143,6 @@ export default function EditorWithImages() {
           ctx.drawImage(image, -imgElem.width / 2, -imgElem.height / 2, imgElem.width, imgElem.height);
           ctx.restore();
         };
-        image.src = imgElem.src;
       });
       
       // Dessiner les blocs de texte
@@ -192,7 +197,7 @@ export default function EditorWithImages() {
         ctx.fillRect(0, 600 - frameWidth, 400, frameWidth);
       }
     };
-    img.src = selectedTheme.image;
+    // img.src est déjà défini plus haut
   }, [showCanvas, textBlocks, imageElements, selectedTheme.image, showFrame, frameWidth]);
 
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -493,6 +498,7 @@ export default function EditorWithImages() {
           // Créer une URL objet à partir du blob
           const objectUrl = URL.createObjectURL(blob);
           setPreviewUrl(objectUrl);
+          setPreviewBlob(blob); // Stocker le blob pour usage ultérieur
           setShowPreview(true);
           setIsExporting(false);
         }, 'image/png', 1.0);
@@ -545,12 +551,10 @@ export default function EditorWithImages() {
   };
 
   const handleShare = async () => {
-    if (!previewUrl) return;
+    if (!previewBlob) return; // Utiliser le blob stocké directement
     
     try {
-      const response = await fetch(previewUrl);
-      const blob = await response.blob();
-      const file = new File([blob], `carte-magique-${Date.now()}.png`, { type: 'image/png' });
+      const file = new File([previewBlob], `carte-magique-${Date.now()}.png`, { type: 'image/png' });
       
       // Essayer d'abord le partage natif
       if (navigator.share && navigator.canShare({ files: [file] })) {
@@ -576,7 +580,7 @@ export default function EditorWithImages() {
         if (navigator.clipboard && navigator.clipboard.write) {
           await navigator.clipboard.write([
             new ClipboardItem({
-              [blob.type]: blob
+              [previewBlob.type]: previewBlob
             })
           ]);
           alert('Image copiée dans le presse-papier ! Vous pouvez maintenant la coller dans votre message.');
