@@ -49,12 +49,24 @@ export const themes: Theme[] = [
   // 🥂 Nouvel An (10)
   createTheme('nouvel-an-1', 'Nouvel An 1', 'Feux d\'artifice', '/themes/nouvel-an/nouvel-an-1.jpg'),
   createTheme('nouvel-an-2', 'Nouvel An 2', 'Champagne', '/themes/nouvel-an/nouvel-an-2.jpg'),
-  createTheme('nouvel-an-3', 'Nouvel An 3', 'Minuit magique', '/themes/nouvel-an/nouvel-an-3.jpg'),
+
   createTheme('nouvel-an-4', 'Nouvel An 4', 'Élégance dorée', '/themes/nouvel-an/nouvel-an-4.jpg'),
   createTheme('nouvel-an-5', 'Nouvel An 5', 'Nuit étoilée', '/themes/nouvel-an/nouvel-an-5.jpg'),
   createTheme('nouvel-an-6', 'Nouvel An 6', 'Confettis', '/themes/nouvel-an/nouvel-an-6.jpg'),
   createTheme('nouvel-an-7', 'Nouvel An 7', 'Horloge', '/themes/nouvel-an/nouvel-an-7.jpg'),
   createTheme('nouvel-an-8', 'Nouvel An 8', 'Lumières', '/themes/nouvel-an/nouvel-an-8.jpg'),
   createTheme('nouvel-an-9', 'Nouvel An 9', 'Espoir 2026', '/themes/nouvel-an/nouvel-an-9.jpg'),
-  createTheme('nouvel-an-10', 'Nouvel An 10', 'Célébration', '/themes/nouvel-an/nouvel-an-10.jpg'),
+
+
+  // ✨ Féerie (10)
+  createTheme('feerie-1', 'Féerie 1', 'Lanterne magique', '/themes/feerie/feerie-1.jpg'),
+  createTheme('feerie-2', 'Féerie 2', 'Poussière d\'or', '/themes/feerie/feerie-2.jpg'),
+  createTheme('feerie-3', 'Féerie 3', 'Cristaux de glace', '/themes/feerie/feerie-3.jpg'),
+  createTheme('feerie-4', 'Féerie 4', 'Aurore boréale', '/themes/feerie/feerie-4.jpg'),
+  createTheme('feerie-5', 'Féerie 5', 'Chalet cosy', '/themes/feerie/feerie-5.jpg'),
+  createTheme('feerie-6', 'Féerie 6', 'Feu d\'artifice', '/themes/feerie/feerie-6.jpg'),
+  createTheme('feerie-7', 'Féerie 7', 'Sapin blanc', '/themes/feerie/feerie-7.jpg'),
+  createTheme('feerie-8', 'Féerie 8', 'Bulles dorées', '/themes/feerie/feerie-8.jpg'),
+  createTheme('feerie-9', 'Féerie 9', 'Chouette des neiges', '/themes/feerie/feerie-9.jpg'),
+  createTheme('feerie-10', 'Féerie 10', 'Sculpture de glace', '/themes/feerie/feerie-10.jpg'),
 ];
