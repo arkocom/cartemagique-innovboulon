@@ -478,19 +478,25 @@ export default function EditorWithImages() {
     setTimeout(() => {
       try {
         if (!canvasRef.current) return;
-        const dataUrl = canvasRef.current.toDataURL('image/png', 1.0);
-        console.log('DataURL généré, longueur:', dataUrl.length);
         
-        if (!dataUrl || dataUrl === 'data:,') {
-          console.error('Canvas vide ou erreur de génération');
-          alert('Erreur: Le canvas est vide.');
+        // Utiliser toBlob au lieu de toDataURL pour une meilleure performance et compatibilité mobile
+        canvasRef.current.toBlob((blob) => {
+          if (!blob) {
+            console.error('Erreur de génération du Blob');
+            alert('Erreur: Impossible de générer l\'image.');
+            setIsExporting(false);
+            return;
+          }
+          
+          console.log('Blob généré, taille:', blob.size);
+          
+          // Créer une URL objet à partir du blob
+          const objectUrl = URL.createObjectURL(blob);
+          setPreviewUrl(objectUrl);
+          setShowPreview(true);
           setIsExporting(false);
-          return;
-        }
+        }, 'image/png', 1.0);
         
-        setPreviewUrl(dataUrl);
-        setShowPreview(true);
-        setIsExporting(false);
       } catch (error) {
         console.error('Erreur lors de l\'export:', error);
         alert('Une erreur est survenue lors de l\'export.');
@@ -499,7 +505,7 @@ export default function EditorWithImages() {
     }, 100);
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     console.log('Tentative de téléchargement...');
     if (!previewUrl) {
       console.error('Aucune URL de prévisualisation disponible');
@@ -508,13 +514,30 @@ export default function EditorWithImages() {
     }
     
     try {
-      const link = document.createElement('a');
-      link.download = `carte-magique-${Date.now()}.png`;
-      link.href = previewUrl;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      console.log('Téléchargement déclenché');
+      // Si c'est une URL blob (créée via createObjectURL), on peut la télécharger directement
+      if (previewUrl.startsWith('blob:')) {
+        const link = document.createElement('a');
+        link.download = `carte-magique-${Date.now()}.png`;
+        link.href = previewUrl;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        console.log('Téléchargement déclenché via Blob URL');
+      } else {
+        // Fallback pour les DataURL (si jamais on revient en arrière) ou URLs distantes
+        const response = await fetch(previewUrl);
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.download = `carte-magique-${Date.now()}.png`;
+        link.href = blobUrl;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+        console.log('Téléchargement déclenché via fetch+blob');
+      }
     } catch (error) {
       console.error('Erreur lors du téléchargement:', error);
       alert('Le téléchargement a échoué. Essayez de faire un appui long sur l\'image pour l\'enregistrer.');
