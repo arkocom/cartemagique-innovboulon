@@ -90,6 +90,9 @@ export default function EditorWithImages() {
   const [isExporting, setIsExporting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [frameWidth, setFrameWidth] = useState(0);
+  const [showFrame, setShowFrame] = useState(false);
+  const [activeTab, setActiveTab] = useState<'carte' | 'parametres'>('carte');
   
   const selectedThemeId = useAppStore((state) => state.selectedThemeId);
   const selectedTheme = themes.find((t) => t.id === selectedThemeId) || themes[0];
@@ -158,9 +161,17 @@ export default function EditorWithImages() {
         ctx.shadowColor = 'transparent';
         ctx.shadowBlur = 0;
       });
+      
+      // Dessiner le cadre blanc si activé
+      if (showFrame && frameWidth > 0) {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, 400, 600);
+        ctx.clearRect(frameWidth, frameWidth, 400 - 2 * frameWidth, 600 - 2 * frameWidth);
+        ctx.drawImage(img, frameWidth, frameWidth, 400 - 2 * frameWidth, 600 - 2 * frameWidth);
+      }
     };
     img.src = selectedTheme.image;
-  }, [showCanvas, textBlocks, imageElements, selectedTheme.image]);
+  }, [showCanvas, textBlocks, imageElements, selectedTheme.image, showFrame, frameWidth]);
 
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     e.preventDefault();
@@ -791,17 +802,45 @@ export default function EditorWithImages() {
                       <div className="bg-gray-800 rounded-lg p-4 space-y-4">
                         <h3 className="text-lg font-bold">Couleur du texte</h3>
                         <div className="flex gap-2 flex-wrap">
-                          {['#ffffff', '#000000', '#ff0000', '#fbbf24', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899'].map(
+                          {['#ffffff', '#000000', '#ff0000', '#fbbf24'].map(
                             (color) => (
                               <button
                                 key={color}
                                 onClick={() => updateSelectedBlock({ color })}
-                                className={`w-12 h-12 md:w-10 md:h-10 rounded-full border-2 ${
+                                className={`w-10 h-10 rounded-full border-2 ${
                                   selectedBlock.color === color ? 'border-white ring-2 ring-white' : 'border-gray-600'
                                 }`}
                                 style={{ backgroundColor: color }}
                               />
                             )
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="bg-gray-800 rounded-lg p-4 space-y-4">
+                        <h3 className="text-lg font-bold">Cadre blanc</h3>
+                        <div className="space-y-3">
+                          <label className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              checked={showFrame}
+                              onChange={(e) => setShowFrame(e.target.checked)}
+                              className="w-5 h-5 cursor-pointer"
+                            />
+                            <span className="text-sm">Ajouter un cadre blanc</span>
+                          </label>
+                          {showFrame && (
+                            <div>
+                              <label className="text-sm text-gray-300 block mb-2">Épaisseur: {frameWidth}px</label>
+                              <input
+                                type="range"
+                                min="0"
+                                max="40"
+                                value={frameWidth}
+                                onChange={(e) => setFrameWidth(Number(e.target.value))}
+                                className="w-full"
+                              />
+                            </div>
                           )}
                         </div>
                       </div>

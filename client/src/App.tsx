@@ -4,6 +4,7 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import Landing from "./pages/Landing";
 import EditorWithImages from './pages/EditorWithImages';
+import HelpModal from '@/components/HelpModal';
 
 function Router() {
   return (
@@ -22,6 +23,7 @@ function App() {
       <TooltipProvider>
         <Toaster />
         <Router />
+        <HelpModal />
       </TooltipProvider>
     </div>
   );
