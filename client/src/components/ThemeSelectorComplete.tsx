@@ -16,16 +16,17 @@ export default function ThemeSelectorComplete() {
     <div className="w-full max-w-6xl mx-auto px-4 py-6">
       {/* Onglets de catégories */}
       <div className="flex gap-6 border-b border-gray-700 pb-4 mb-6 overflow-x-auto">
-        {(['noel', 'nouvel-an', 'hiver', 'feerie'] as Category[]).map((cat) => {
+        {(['noel', 'nouvel-an', 'hiver', 'feerie', 'nature', 'artdeco'] as Category[]).map((cat) => {
           const isActive = activeCategory === cat;
-          const label =
-            cat === 'noel'
-              ? 'Noël 🎄'
-              : cat === 'nouvel-an'
-              ? 'Nouvel An 🥂'
-              : cat === 'hiver'
-              ? 'Hiver ❄️'
-              : 'Féerie ✨';
+          let label = '';
+          switch (cat) {
+            case 'noel': label = 'Noël 🎄'; break;
+            case 'nouvel-an': label = 'Nouvel An 🥂'; break;
+            case 'hiver': label = 'Hiver ❄️'; break;
+            case 'feerie': label = 'Féerie ✨'; break;
+            case 'nature': label = 'Nature 🌲'; break;
+            case 'artdeco': label = 'Art Déco 🎩'; break;
+          }
           return (
             <button
               key={cat}

@@ -69,4 +69,18 @@ export const themes: Theme[] = [
   createTheme('feerie-8', 'Féerie 8', 'Bulles dorées', '/themes/feerie/feerie-8.jpg'),
   createTheme('feerie-9', 'Féerie 9', 'Chouette des neiges', '/themes/feerie/feerie-9.jpg'),
   createTheme('feerie-10', 'Féerie 10', 'Sculpture de glace', '/themes/feerie/feerie-10.jpg'),
+
+  // 🌲 Nature (5)
+  createTheme('nature-1', 'Nature 1', 'Pommes de pin', '/themes/nature/nature-1.jpg'),
+  createTheme('nature-2', 'Nature 2', 'Flocon macro', '/themes/nature/nature-2.jpg'),
+  createTheme('nature-3', 'Nature 3', 'Houx rustique', '/themes/nature/nature-3.jpg'),
+  createTheme('nature-4', 'Nature 4', 'Forêt ensoleillée', '/themes/nature/nature-4.jpg'),
+  createTheme('nature-5', 'Nature 5', 'Cannelle & Orange', '/themes/nature/nature-5.jpg'),
+
+  // 🥂 Art Déco (5)
+  createTheme('artdeco-1', 'Art Déco 1', 'Lignes or', '/themes/artdeco/artdeco-1.jpg'),
+  createTheme('artdeco-2', 'Art Déco 2', 'Marbre noir', '/themes/artdeco/artdeco-2.jpg'),
+  createTheme('artdeco-3', 'Art Déco 3', 'Arches dorées', '/themes/artdeco/artdeco-3.jpg'),
+  createTheme('artdeco-4', 'Art Déco 4', 'Bulles champagne', '/themes/artdeco/artdeco-4.jpg'),
+  createTheme('artdeco-5', 'Art Déco 5', 'Émeraude & Or', '/themes/artdeco/artdeco-5.jpg'),
 ];
