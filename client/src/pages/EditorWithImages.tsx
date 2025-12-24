@@ -5,6 +5,8 @@ import { themes } from '@/lib/themes';
 import { STARTER_TEMPLATES, CardTemplate } from '@/lib/templates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
 import ThemeSelectorComplete from '@/components/ThemeSelectorComplete';
 import { Trash2, Plus, Upload, RotateCw, ZoomIn, ZoomOut, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
 
@@ -99,6 +101,13 @@ export default function EditorWithImages() {
   const [showFrame, setShowFrame] = useState(false);
   const [activeTab, setActiveTab] = useState<'carte' | 'parametres'>('carte');
   const [showTemplates, setShowTemplates] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const STICKERS = [
+    '🎅', '🎄', '🎁', '⭐', '❄️', '⛄', '🦌', '🔔', 
+    '🕯️', '🍪', '🥛', '🎉', '🥂', '🎆', '❤️', '✨'
+  ];
   
   const selectedThemeId = useAppStore((state) => state.selectedThemeId);
   const selectedTheme = themes.find((t) => t.id === selectedThemeId) || themes[0];
@@ -108,7 +117,59 @@ export default function EditorWithImages() {
 
   useEffect(() => {
     setIsClient(true);
+    // Initialiser l'audio
+    audioRef.current = new Audio('/music/jingle-bells.mp3');
+    audioRef.current.loop = true;
+    audioRef.current.volume = 0.3;
+    
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
   }, []);
+
+  const toggleMusic = () => {
+    if (!audioRef.current) return;
+    
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play().catch(e => console.log("Lecture auto bloquée par le navigateur", e));
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const addSticker = (emoji: string) => {
+    // Convertir l'emoji en image via canvas
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    ctx.font = '100px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(emoji, 64, 64);
+    
+    const dataUrl = canvas.toDataURL('image/png');
+    
+    const newImage: ImageElement = {
+      id: Date.now().toString(),
+      src: dataUrl,
+      x: 150,
+      y: 250,
+      width: 100,
+      height: 100,
+      rotation: 0,
+    };
+    
+    setImageElements([...imageElements, newImage]);
+    setSelectedImageId(newImage.id);
+    setSelectedBlockId('');
+  };
 
   const selectedBlock = textBlocks.find((b) => b.id === selectedBlockId);
   const selectedImage = imageElements.find((img) => img.id === selectedImageId);
@@ -836,7 +897,7 @@ export default function EditorWithImages() {
                     <div className="flex justify-between items-center">
                       <h3 className="text-lg font-bold flex items-center gap-2">
                         <Upload className="w-5 h-5" />
-                        Images
+                        Images & Stickers
                       </h3>
                       <Button
                         onClick={() => setShowTemplates(true)}
@@ -847,13 +908,31 @@ export default function EditorWithImages() {
                         ✨ Modèles
                       </Button>
                     </div>
+                    
+                    {/* Stickers */}
+                    <div className="mb-4">
+                      <Label className="text-gray-300 mb-2 block text-sm">Ajouter un sticker</Label>
+                      <div className="grid grid-cols-8 gap-1 bg-gray-900 p-2 rounded-lg">
+                        {STICKERS.map((sticker) => (
+                          <button
+                            key={sticker}
+                            onClick={() => addSticker(sticker)}
+                            className="text-2xl hover:bg-gray-700 p-1 rounded transition-colors flex items-center justify-center aspect-square"
+                            title="Ajouter ce sticker"
+                          >
+                            {sticker}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
                     <Button
                       onClick={() => fileInputRef.current?.click()}
                       size="lg"
                       className="w-full bg-blue-600 hover:bg-blue-700 text-base md:text-sm md:py-2 py-3"
                     >
                       <Upload className="w-4 h-4 mr-2" />
-                      Ajouter une image
+                      Ajouter une photo perso
                     </Button>
                     <input
                       ref={fileInputRef}
@@ -863,7 +942,7 @@ export default function EditorWithImages() {
                       className="hidden"
                     />
                     {imageElements.length > 0 && (
-                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                      <div className="space-y-2 max-h-40 overflow-y-auto mt-3">
                         {imageElements.map((img) => (
                           <div
                             key={img.id}
@@ -874,7 +953,7 @@ export default function EditorWithImages() {
                             }`}
                             onClick={() => setSelectedImageId(img.id)}
                           >
-                            <span className="text-sm truncate flex-1">Image</span>
+                            <span className="text-sm truncate flex-1">Image / Sticker</span>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
