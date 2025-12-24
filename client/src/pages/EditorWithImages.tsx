@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'wouter';
 import { useAppStore } from '@/stores/appStore';
 import { themes } from '@/lib/themes';
+import { STARTER_TEMPLATES, CardTemplate } from '@/lib/templates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import ThemeSelectorComplete from '@/components/ThemeSelectorComplete';
@@ -48,7 +49,7 @@ const textStyles = {
   },
 };
 
-interface TextBlock {
+export interface TextBlock {
   id: string;
   text: string;
   x: number;
@@ -93,6 +94,7 @@ export default function EditorWithImages() {
   const [frameWidth, setFrameWidth] = useState(0);
   const [showFrame, setShowFrame] = useState(false);
   const [activeTab, setActiveTab] = useState<'carte' | 'parametres'>('carte');
+  const [showTemplates, setShowTemplates] = useState(false);
   
   const selectedThemeId = useAppStore((state) => state.selectedThemeId);
   const selectedTheme = themes.find((t) => t.id === selectedThemeId) || themes[0];
@@ -314,6 +316,27 @@ export default function EditorWithImages() {
     }
   };
 
+  const applyTemplate = (template: CardTemplate) => {
+    // Appliquer les blocs de texte du modèle
+    const newBlocks = template.textBlocks.map((block, index) => ({
+      ...block,
+      id: Date.now().toString() + index,
+    }));
+    setTextBlocks(newBlocks);
+    
+    // Sélectionner le premier bloc
+    if (newBlocks.length > 0) {
+      setSelectedBlockId(newBlocks[0].id);
+    }
+    
+    // Appliquer le thème si spécifié
+    if (template.themeId) {
+      // Logique pour changer le thème si nécessaire
+    }
+    
+    setShowTemplates(false);
+  };
+
   const handleCanvasTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     if (!isDragging || e.touches.length !== 1) return;
@@ -509,6 +532,37 @@ export default function EditorWithImages() {
         <div className="w-20"></div>
       </header>
 
+      {/* Modal de sélection de modèles */}
+      {showTemplates && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-gray-800 rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-scale-in">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">Choisir un modèle</h2>
+              <button 
+                onClick={() => setShowTemplates(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {STARTER_TEMPLATES.map((template, index) => (
+                <div 
+                  key={template.id}
+                  className={`bg-gray-700 rounded-lg p-4 cursor-pointer hover:bg-gray-600 transition-all border-2 border-transparent hover:border-blue-500 animate-slide-up delay-${(index + 1) * 100}`}
+                  onClick={() => applyTemplate(template)}
+                >
+                  <div className="text-4xl mb-3 text-center">{template.icon}</div>
+                  <h3 className="text-xl font-bold text-center mb-2">{template.name}</h3>
+                  <p className="text-gray-400 text-center text-sm">{template.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal de prévisualisation */}
       {showPreview && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
@@ -623,10 +677,20 @@ export default function EditorWithImages() {
                 <div className="space-y-3 md:space-y-4 overflow-y-auto max-h-[80vh] order-1 lg:order-2">
                   {/* Upload d'images */}
                   <div className="bg-gray-800 rounded-lg p-4 space-y-3">
-                    <h3 className="text-lg font-bold flex items-center gap-2">
-                      <Upload className="w-5 h-5" />
-                      Images
-                    </h3>
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-bold flex items-center gap-2">
+                        <Upload className="w-5 h-5" />
+                        Images
+                      </h3>
+                      <Button
+                        onClick={() => setShowTemplates(true)}
+                        size="sm"
+                        variant="outline"
+                        className="bg-gradient-to-r from-purple-600 to-pink-600 border-none hover:from-purple-700 hover:to-pink-700 text-white"
+                      >
+                        ✨ Modèles
+                      </Button>
+                    </div>
                     <Button
                       onClick={() => fileInputRef.current?.click()}
                       size="lg"
