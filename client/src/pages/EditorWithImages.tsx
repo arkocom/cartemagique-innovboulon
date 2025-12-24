@@ -710,12 +710,20 @@ export default function EditorWithImages() {
                 </Button>
               </div>
               <Button
-                onClick={() => setShowSaveModal(true)}
+                onClick={() => {
+                  const newWindow = window.open();
+                  if (newWindow) {
+                    newWindow.document.write(`<img src="${previewUrl}" style="width:100%; height:auto;" />`);
+                    newWindow.document.title = "Votre Carte Magique";
+                  } else {
+                    setShowSaveModal(true);
+                  }
+                }}
                 variant="outline"
                 size="lg"
-                className="px-6 py-3"
+                className="px-6 py-3 border-yellow-500/50 text-yellow-100 hover:bg-yellow-900/20"
               >
-                💾 Sauvegarde manuelle
+                🌐 Ouvrir l'image (Force)
               </Button>
               <Button
                 onClick={() => setShowPreview(false)}
@@ -728,7 +736,10 @@ export default function EditorWithImages() {
             </div>
             <div className="mt-4 p-3 bg-blue-900/30 rounded-lg border border-blue-800/50">
               <p className="text-sm text-blue-200 text-center mb-2">
-                💡 <strong>Astuce importante :</strong>
+                💡 <strong>Mode Aperçu / Test :</strong>
+              </p>
+              <p className="text-xs text-yellow-200 text-center mb-3 border border-yellow-500/30 bg-yellow-500/10 p-2 rounded">
+                ⚠️ Vous testez dans l'éditeur Manus. Les applications externes (WhatsApp, Mail) sont bloquées ici par sécurité. Elles fonctionneront une fois le site publié.
               </p>
               <ul className="text-xs text-gray-300 text-left space-y-1 list-disc pl-4">
                 <li>Sur <strong>iPhone/Android</strong> : Utilisez le bouton "Partager" ci-dessus.</li>
