@@ -164,10 +164,16 @@ export default function EditorWithImages() {
       
       // Dessiner le cadre blanc si activé
       if (showFrame && frameWidth > 0) {
+        // Dessiner le cadre blanc autour de l'image de fond
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, 400, 600);
-        ctx.clearRect(frameWidth, frameWidth, 400 - 2 * frameWidth, 600 - 2 * frameWidth);
-        ctx.drawImage(img, frameWidth, frameWidth, 400 - 2 * frameWidth, 600 - 2 * frameWidth);
+        // Bordure gauche
+        ctx.fillRect(0, 0, frameWidth, 600);
+        // Bordure droite
+        ctx.fillRect(400 - frameWidth, 0, frameWidth, 600);
+        // Bordure haut
+        ctx.fillRect(0, 0, 400, frameWidth);
+        // Bordure bas
+        ctx.fillRect(0, 600 - frameWidth, 400, frameWidth);
       }
     };
     img.src = selectedTheme.image;
