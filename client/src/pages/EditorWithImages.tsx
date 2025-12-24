@@ -688,43 +688,25 @@ export default function EditorWithImages() {
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <div className="flex flex-col gap-2 w-full sm:w-auto">
                 <Button
-                  onClick={handleShare}
+                  onClick={handleDownload}
                   size="lg"
-                  className="px-6 py-3 bg-gradient-to-r from-green-600 to-blue-500 hover:from-green-700 hover:to-blue-600 w-full"
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 w-full"
                 >
-                  📱 Partager / Copier
+                  💾 Télécharger l'image
                 </Button>
                 <Button
                   onClick={() => {
                     const subject = encodeURIComponent("Ma carte de vœux personnalisée");
-                    const body = encodeURIComponent("Bonjour,\n\nJe t'envoie cette carte de vœux que j'ai créée spécialement pour toi !\n\n(N'oublie pas de joindre l'image que tu as téléchargée ou copiée)\n\nJoyeuses fêtes !");
-                    window.location.href = `mailto:?subject=${subject}&body=${body}`;
-                    // Copier l'image aussi pour faciliter l'ajout
-                    handleShare();
+                    const body = encodeURIComponent("Bonjour,\n\nJe t'envoie cette carte de vœux que j'ai créée spécialement pour toi !\n\n(N'oublie pas de joindre l'image que tu as téléchargée)\n\nJoyeuses fêtes !");
+                    window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
                   }}
                   variant="secondary"
                   size="sm"
-                  className="w-full bg-blue-100 text-blue-800 hover:bg-blue-200"
+                  className="w-full bg-gray-700 hover:bg-gray-600"
                 >
                   📧 Envoyer par Email
                 </Button>
               </div>
-              <Button
-                onClick={() => {
-                  const newWindow = window.open();
-                  if (newWindow) {
-                    newWindow.document.write(`<img src="${previewUrl}" style="width:100%; height:auto;" />`);
-                    newWindow.document.title = "Votre Carte Magique";
-                  } else {
-                    setShowSaveModal(true);
-                  }
-                }}
-                variant="outline"
-                size="lg"
-                className="px-6 py-3 border-yellow-500/50 text-yellow-100 hover:bg-yellow-900/20"
-              >
-                🌐 Ouvrir l'image (Force)
-              </Button>
               <Button
                 onClick={() => setShowPreview(false)}
                 variant="outline"
@@ -734,19 +716,9 @@ export default function EditorWithImages() {
                 ✏️ Modifier
               </Button>
             </div>
-            <div className="mt-4 p-3 bg-blue-900/30 rounded-lg border border-blue-800/50">
-              <p className="text-sm text-blue-200 text-center mb-2">
-                💡 <strong>Mode Aperçu / Test :</strong>
-              </p>
-              <p className="text-xs text-yellow-200 text-center mb-3 border border-yellow-500/30 bg-yellow-500/10 p-2 rounded">
-                ⚠️ Vous testez dans l'éditeur Manus. Les applications externes (WhatsApp, Mail) sont bloquées ici par sécurité. Elles fonctionneront une fois le site publié.
-              </p>
-              <ul className="text-xs text-gray-300 text-left space-y-1 list-disc pl-4">
-                <li>Sur <strong>iPhone/Android</strong> : Utilisez le bouton "Partager" ci-dessus.</li>
-                <li>Si rien ne s'ouvre : L'image est probablement copiée, faites "Coller" dans votre message.</li>
-                <li>En dernier recours : Utilisez "Sauvegarde manuelle" pour enregistrer l'image.</li>
-              </ul>
-            </div>
+            <p className="text-sm text-gray-400 text-center mt-4">
+              💡 Une fois téléchargée, vous pourrez envoyer l'image par WhatsApp, SMS ou Email.
+            </p>
           </div>
         </div>
       )}
