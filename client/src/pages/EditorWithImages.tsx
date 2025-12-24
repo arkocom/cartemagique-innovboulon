@@ -70,6 +70,7 @@ interface ImageElement {
   width: number;
   height: number;
   rotation: number;
+  filter?: 'none' | 'grayscale' | 'sepia' | 'vintage';
 }
 
 export default function EditorWithImages() {
@@ -99,6 +100,8 @@ export default function EditorWithImages() {
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [frameWidth, setFrameWidth] = useState(0);
   const [showFrame, setShowFrame] = useState(false);
+  const [photoFilter, setPhotoFilter] = useState<'none' | 'grayscale' | 'sepia' | 'vintage'>('none');
+  const [darkMode, setDarkMode] = useState(true);
   const [activeTab, setActiveTab] = useState<'carte' | 'parametres'>('carte');
   const [showTemplates, setShowTemplates] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -164,6 +167,7 @@ export default function EditorWithImages() {
       width: 100,
       height: 100,
       rotation: 0,
+      filter: 'none', // Add filter property to new images
     };
     
     setImageElements([...imageElements, newImage]);
@@ -201,6 +205,18 @@ export default function EditorWithImages() {
           ctx.save();
           ctx.translate(imgElem.x + imgElem.width / 2, imgElem.y + imgElem.height / 2);
           ctx.rotate((imgElem.rotation * Math.PI) / 180);
+          
+          // Apply filters
+          if (imgElem.filter && imgElem.filter !== 'none') {
+            if (imgElem.filter === 'grayscale') {
+              ctx.filter = 'grayscale(100%)';
+            } else if (imgElem.filter === 'sepia') {
+              ctx.filter = 'sepia(100%)';
+            } else if (imgElem.filter === 'vintage') {
+              ctx.filter = 'sepia(50%) contrast(120%) brightness(90%)';
+            }
+          }
+          
           ctx.drawImage(image, -imgElem.width / 2, -imgElem.height / 2, imgElem.width, imgElem.height);
           ctx.restore();
         };
@@ -911,8 +927,8 @@ export default function EditorWithImages() {
                     
                     {/* Stickers */}
                     <div className="mb-4">
-                      <Label className="text-gray-300 mb-2 block text-sm">Ajouter un sticker</Label>
-                      <div className="grid grid-cols-8 gap-1 bg-gray-900 p-2 rounded-lg">
+                      <Label className={darkMode ? "text-gray-300 mb-2 block text-sm" : "text-gray-700 mb-2 block text-sm"}>Ajouter un sticker</Label>
+                      <div className={`grid grid-cols-8 gap-1 p-2 rounded-lg ${darkMode ? 'bg-gray-900' : 'bg-gray-200'}`}>
                         {STICKERS.map((sticker) => (
                           <button
                             key={sticker}
@@ -971,8 +987,46 @@ export default function EditorWithImages() {
 
                   {selectedImage && (
                     <>
-                      <div className="bg-gray-800 rounded-lg p-4 space-y-4">
-                        <h3 className="text-lg font-bold">Taille: {selectedImage.width}×{selectedImage.height}px</h3>
+                      <div className={`rounded-lg p-4 space-y-4 ${darkMode ? 'bg-gray-800' : 'bg-white shadow-sm'}`}>
+                        <div className="flex justify-between items-center">
+                          <h3 className="text-lg font-bold">Image sélectionnée</h3>
+                          <button
+                            onClick={() => handleDeleteImage(selectedImage.id)}
+                            className="text-red-400 hover:text-red-300 p-1"
+                            title="Supprimer l'image"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                        
+                        <div>
+                          <Label className={darkMode ? "text-gray-300" : "text-gray-700"}>Filtre photo</Label>
+                          <div className="grid grid-cols-4 gap-2 mt-1">
+                            {[
+                              { id: 'none', name: 'Aucun', icon: '🚫' },
+                              { id: 'grayscale', name: 'N&B', icon: '⚫' },
+                              { id: 'sepia', name: 'Sépia', icon: '🟤' },
+                              { id: 'vintage', name: 'Rétro', icon: '🎞️' }
+                            ].map((filter) => (
+                              <button
+                                key={filter.id}
+                                onClick={() => updateSelectedImage({ filter: filter.id as any })}
+                                className={`flex flex-col items-center justify-center p-2 rounded text-xs border transition-colors ${
+                                  (selectedImage.filter || 'none') === filter.id
+                                    ? 'border-blue-500 bg-blue-500/20 text-blue-400'
+                                    : darkMode 
+                                      ? 'border-gray-600 hover:bg-gray-700 text-gray-300' 
+                                      : 'border-gray-300 hover:bg-gray-200 text-gray-700'
+                                }`}
+                              >
+                                <span className="text-lg mb-1">{filter.icon}</span>
+                                {filter.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <h3 className="text-sm font-medium mt-4">Taille: {selectedImage.width}×{selectedImage.height}px</h3>
                         <div className="flex gap-2">
                           <Button
                             onClick={() => updateSelectedImage({ width: Math.max(50, selectedImage.width - 20), height: Math.max(50, selectedImage.height - 20) })}
@@ -1075,13 +1129,17 @@ export default function EditorWithImages() {
 
                   {selectedBlock && (
                     <>
-                      <div className="bg-gray-800 rounded-lg p-4 space-y-4">
+                      <div className={`rounded-lg p-4 space-y-4 ${darkMode ? 'bg-gray-800' : 'bg-white shadow-sm'}`}>
                         <h3 className="text-lg font-bold">Texte</h3>
                         <textarea
                           value={selectedBlock.text}
                           onChange={(e) => updateSelectedBlock({ text: e.target.value })}
                           placeholder="Votre message..."
-                          className="w-full h-24 p-3 bg-gray-700 text-white border border-gray-600 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className={`w-full h-24 p-3 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                            darkMode 
+                              ? 'bg-gray-700 text-white border-gray-600' 
+                              : 'bg-white text-gray-900 border-gray-300'
+                          }`}
                         />
                         <div className="flex gap-2 mt-2">
                           <button
@@ -1120,7 +1178,7 @@ export default function EditorWithImages() {
                         </div>
                       </div>
 
-                      <div className="bg-gray-800 rounded-lg p-4 space-y-4">
+                      <div className={`rounded-lg p-4 space-y-4 ${darkMode ? 'bg-gray-800' : 'bg-white shadow-sm'}`}>
                         <h3 className="text-lg font-bold">Style de texte</h3>
                         <div className="grid grid-cols-2 gap-2">
                           {(Object.keys(textStyles) as TextStyle[]).map((styleKey) => (
@@ -1129,9 +1187,12 @@ export default function EditorWithImages() {
                               onClick={() => updateSelectedBlock({ style: styleKey })}
                               className={`px-4 py-3 md:py-2 rounded-lg border-2 transition-all text-sm md:text-xs ${
                                 selectedBlock.style === styleKey
-                                  ? 'border-white bg-white/10 text-white'
-                                  : 'border-gray-600 bg-gray-700 text-gray-300 hover:border-gray-500'
+                                  ? 'border-blue-500 bg-blue-500/20 text-blue-400'
+                                  : darkMode 
+                                    ? 'border-gray-600 bg-gray-700 text-gray-300 hover:border-gray-500' 
+                                    : 'border-gray-300 bg-gray-100 text-gray-700 hover:border-gray-400'
                               }`}
+                              style={{ fontFamily: textStyles[styleKey].fontFamily }}
                             >
                               {textStyles[styleKey].name}
                             </button>
