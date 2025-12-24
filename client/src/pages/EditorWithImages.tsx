@@ -6,7 +6,7 @@ import { STARTER_TEMPLATES, CardTemplate } from '@/lib/templates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import ThemeSelectorComplete from '@/components/ThemeSelectorComplete';
-import { Trash2, Plus, Upload, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
+import { Trash2, Plus, Upload, RotateCw, ZoomIn, ZoomOut, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
 
 type TextStyle = 'classic' | 'modern' | 'elegant' | 'festive';
 
@@ -57,6 +57,7 @@ export interface TextBlock {
   color: string;
   fontSize: number;
   style: TextStyle;
+  align: 'left' | 'center' | 'right';
 }
 
 interface ImageElement {
@@ -81,6 +82,7 @@ export default function EditorWithImages() {
       color: '#ffffff',
       fontSize: 32,
       style: 'modern',
+      align: 'center',
     },
   ]);
   const [imageElements, setImageElements] = useState<ImageElement[]>([]);
@@ -143,7 +145,7 @@ export default function EditorWithImages() {
         
         ctx.font = `bold ${block.fontSize}px ${style.fontFamily}`;
         ctx.fillStyle = block.color;
-        ctx.textAlign = 'center';
+        ctx.textAlign = block.align || 'center';
         ctx.textBaseline = 'middle';
         
         ctx.shadowColor = style.shadowColor;
@@ -151,15 +153,26 @@ export default function EditorWithImages() {
         ctx.shadowOffsetX = 2;
         ctx.shadowOffsetY = 2;
         
-        if (style.outline) {
-          ctx.strokeStyle = style.outlineColor || '#000000';
-          ctx.lineWidth = style.outlineWidth || 2;
-          ctx.lineJoin = 'round';
-          ctx.miterLimit = 2;
-          ctx.strokeText(block.text, block.x, block.y);
-        }
+        // Gestion du texte multi-lignes
+        const lines = block.text.split('\n');
+        const lineHeight = block.fontSize * 1.2;
+        const totalHeight = lines.length * lineHeight;
+        const startY = block.y - (totalHeight / 2) + (lineHeight / 2);
         
-        ctx.fillText(block.text, block.x, block.y);
+        lines.forEach((line, index) => {
+          const lineY = startY + (index * lineHeight);
+          
+          if (style.outline) {
+            ctx.strokeStyle = style.outlineColor || '#000000';
+            ctx.lineWidth = style.outlineWidth || 2;
+            ctx.lineJoin = 'round';
+            ctx.miterLimit = 2;
+            ctx.strokeText(line, block.x, lineY);
+          }
+          
+          ctx.fillText(line, block.x, lineY);
+        });
+        
         ctx.shadowColor = 'transparent';
         ctx.shadowBlur = 0;
       });
@@ -383,6 +396,7 @@ export default function EditorWithImages() {
       color: '#ffffff',
       fontSize: 24,
       style: 'modern',
+      align: 'center',
     };
     setTextBlocks([...textBlocks, newBlock]);
     setSelectedBlockId(newBlock.id);
@@ -842,12 +856,47 @@ export default function EditorWithImages() {
                     <>
                       <div className="bg-gray-800 rounded-lg p-4 space-y-4">
                         <h3 className="text-lg font-bold">Texte</h3>
-                        <Input
+                        <textarea
                           value={selectedBlock.text}
                           onChange={(e) => updateSelectedBlock({ text: e.target.value })}
                           placeholder="Votre message..."
-                          className="bg-gray-700 text-white border-gray-600"
+                          className="w-full h-24 p-3 bg-gray-700 text-white border border-gray-600 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
+                        <div className="flex gap-2 mt-2">
+                          <button
+                            onClick={() => updateSelectedBlock({ align: 'left' })}
+                            className={`flex-1 py-2 rounded border ${
+                              selectedBlock.align === 'left'
+                                ? 'bg-white/20 border-white'
+                                : 'bg-gray-700 border-gray-600 hover:bg-gray-600'
+                            }`}
+                            title="Aligner à gauche"
+                          >
+                            <AlignLeft className="w-4 h-4 mx-auto" />
+                          </button>
+                          <button
+                            onClick={() => updateSelectedBlock({ align: 'center' })}
+                            className={`flex-1 py-2 rounded border ${
+                              selectedBlock.align === 'center'
+                                ? 'bg-white/20 border-white'
+                                : 'bg-gray-700 border-gray-600 hover:bg-gray-600'
+                            }`}
+                            title="Centrer"
+                          >
+                            <AlignCenter className="w-4 h-4 mx-auto" />
+                          </button>
+                          <button
+                            onClick={() => updateSelectedBlock({ align: 'right' })}
+                            className={`flex-1 py-2 rounded border ${
+                              selectedBlock.align === 'right'
+                                ? 'bg-white/20 border-white'
+                                : 'bg-gray-700 border-gray-600 hover:bg-gray-600'
+                            }`}
+                            title="Aligner à droite"
+                          >
+                            <AlignRight className="w-4 h-4 mx-auto" />
+                          </button>
+                        </div>
                       </div>
 
                       <div className="bg-gray-800 rounded-lg p-4 space-y-4">

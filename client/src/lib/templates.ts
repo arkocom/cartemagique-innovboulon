@@ -23,7 +23,8 @@ export const STARTER_TEMPLATES: CardTemplate[] = [
         y: 150,
         color: '#FFFFFF',
         fontSize: 36,
-        style: 'elegant'
+        style: 'elegant',
+        align: 'center'
       },
       {
         text: 'Toute l\'équipe vous souhaite\nune excellente année.',
@@ -31,7 +32,8 @@ export const STARTER_TEMPLATES: CardTemplate[] = [
         y: 300,
         color: '#FFFFFF',
         fontSize: 20,
-        style: 'classic'
+        style: 'classic',
+        align: 'center'
       },
       {
         text: 'Innov\'BOULON',
@@ -39,8 +41,9 @@ export const STARTER_TEMPLATES: CardTemplate[] = [
         y: 500,
         color: '#FFD700', // Or
         fontSize: 24,
-        style: 'modern'
-      }
+        style: 'modern',
+      align: 'center',
+    },
     ]
   },
   {
@@ -55,7 +58,8 @@ export const STARTER_TEMPLATES: CardTemplate[] = [
         y: 100,
         color: '#FF0000', // Rouge
         fontSize: 42,
-        style: 'festive'
+        style: 'festive',
+        align: 'center'
       },
       {
         text: 'Plein de bonheur et d\'amour\npour cette nouvelle année.',
@@ -63,7 +67,8 @@ export const STARTER_TEMPLATES: CardTemplate[] = [
         y: 450,
         color: '#FFFFFF',
         fontSize: 22,
-        style: 'classic'
+        style: 'classic',
+        align: 'center'
       },
       {
         text: 'La famille Martin',
@@ -71,7 +76,8 @@ export const STARTER_TEMPLATES: CardTemplate[] = [
         y: 550,
         color: '#FFFFFF',
         fontSize: 18,
-        style: 'modern'
+        style: 'modern',
+        align: 'center'
       }
     ]
   },
@@ -87,7 +93,8 @@ export const STARTER_TEMPLATES: CardTemplate[] = [
         y: 200,
         color: '#FFFFFF',
         fontSize: 48,
-        style: 'elegant'
+        style: 'elegant',
+        align: 'center'
       },
       {
         text: 'Pour une année 2025\nremplie de magie.',
@@ -95,7 +102,8 @@ export const STARTER_TEMPLATES: CardTemplate[] = [
         y: 350,
         color: '#FFD700',
         fontSize: 24,
-        style: 'classic'
+        style: 'classic',
+        align: 'center'
       }
     ]
   },
@@ -111,7 +119,8 @@ export const STARTER_TEMPLATES: CardTemplate[] = [
         y: 150,
         color: '#FFD700',
         fontSize: 40,
-        style: 'festive'
+        style: 'festive',
+        align: 'center'
       },
       {
         text: '2025 va être\nINCROYABLE !',
@@ -119,7 +128,8 @@ export const STARTER_TEMPLATES: CardTemplate[] = [
         y: 300,
         color: '#FFFFFF',
         fontSize: 28,
-        style: 'modern'
+        style: 'modern',
+        align: 'center'
       },
       {
         text: '#BestYearEver',
@@ -127,7 +137,8 @@ export const STARTER_TEMPLATES: CardTemplate[] = [
         y: 500,
         color: '#FFFFFF',
         fontSize: 18,
-        style: 'classic'
+        style: 'classic',
+        align: 'center'
       }
     ]
   },
@@ -143,7 +154,8 @@ export const STARTER_TEMPLATES: CardTemplate[] = [
         y: 250,
         color: '#FFFFFF',
         fontSize: 80,
-        style: 'modern'
+        style: 'modern',
+        align: 'center'
       },
       {
         text: 'Bonne Année',
@@ -151,7 +163,8 @@ export const STARTER_TEMPLATES: CardTemplate[] = [
         y: 350,
         color: '#FFFFFF',
         fontSize: 24,
-        style: 'classic'
+        style: 'classic',
+        align: 'center'
       }
     ]
   }
