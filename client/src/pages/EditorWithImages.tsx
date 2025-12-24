@@ -542,6 +542,9 @@ export default function EditorWithImages() {
           console.warn('Le partage natif a été annulé ou a échoué:', shareError);
           // Continuer vers les alternatives
         }
+      } else {
+        // Si le partage natif n'est pas supporté (ex: desktop ou contexte non-sécurisé)
+        console.log('Partage natif non supporté ou non sécurisé');
       }
 
       // Essayer la copie dans le presse-papier (Clipboard API)
@@ -683,13 +686,29 @@ export default function EditorWithImages() {
               />
             </div>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button
-                onClick={handleShare}
-                size="lg"
-                className="px-6 py-3 bg-gradient-to-r from-green-600 to-blue-500 hover:from-green-700 hover:to-blue-600"
-              >
-                📱 Partager / Copier
-              </Button>
+              <div className="flex flex-col gap-2 w-full sm:w-auto">
+                <Button
+                  onClick={handleShare}
+                  size="lg"
+                  className="px-6 py-3 bg-gradient-to-r from-green-600 to-blue-500 hover:from-green-700 hover:to-blue-600 w-full"
+                >
+                  📱 Partager / Copier
+                </Button>
+                <Button
+                  onClick={() => {
+                    const subject = encodeURIComponent("Ma carte de vœux personnalisée");
+                    const body = encodeURIComponent("Bonjour,\n\nJe t'envoie cette carte de vœux que j'ai créée spécialement pour toi !\n\n(N'oublie pas de joindre l'image que tu as téléchargée ou copiée)\n\nJoyeuses fêtes !");
+                    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+                    // Copier l'image aussi pour faciliter l'ajout
+                    handleShare();
+                  }}
+                  variant="secondary"
+                  size="sm"
+                  className="w-full bg-blue-100 text-blue-800 hover:bg-blue-200"
+                >
+                  📧 Envoyer par Email
+                </Button>
+              </div>
               <Button
                 onClick={() => setShowSaveModal(true)}
                 variant="outline"
@@ -707,9 +726,16 @@ export default function EditorWithImages() {
                 ✏️ Modifier
               </Button>
             </div>
-            <p className="text-sm text-gray-400 text-center mt-4">
-              💡 Astuce : Si le téléchargement ne démarre pas, utilisez "Sauvegarde manuelle".
-            </p>
+            <div className="mt-4 p-3 bg-blue-900/30 rounded-lg border border-blue-800/50">
+              <p className="text-sm text-blue-200 text-center mb-2">
+                💡 <strong>Astuce importante :</strong>
+              </p>
+              <ul className="text-xs text-gray-300 text-left space-y-1 list-disc pl-4">
+                <li>Sur <strong>iPhone/Android</strong> : Utilisez le bouton "Partager" ci-dessus.</li>
+                <li>Si rien ne s'ouvre : L'image est probablement copiée, faites "Coller" dans votre message.</li>
+                <li>En dernier recours : Utilisez "Sauvegarde manuelle" pour enregistrer l'image.</li>
+              </ul>
+            </div>
           </div>
         </div>
       )}
