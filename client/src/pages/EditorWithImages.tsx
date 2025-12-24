@@ -465,27 +465,37 @@ export default function EditorWithImages() {
   };
 
   const handleExport = () => {
-    if (!canvasRef.current) return;
+    console.log('Début de l\'export...');
+    if (!canvasRef.current) {
+      console.error('Canvas introuvable');
+      return;
+    }
     
     setIsExporting(true);
     
-    try {
-      const dataUrl = canvasRef.current.toDataURL('image/png', 1.0);
-      
-      if (!dataUrl || dataUrl === 'data:,') {
-        alert('Erreur: Le canvas est vide.');
+    // Attendre un court instant pour s'assurer que le dernier rendu est terminé
+    setTimeout(() => {
+      try {
+        if (!canvasRef.current) return;
+        const dataUrl = canvasRef.current.toDataURL('image/png', 1.0);
+        console.log('DataURL généré, longueur:', dataUrl.length);
+        
+        if (!dataUrl || dataUrl === 'data:,') {
+          console.error('Canvas vide ou erreur de génération');
+          alert('Erreur: Le canvas est vide.');
+          setIsExporting(false);
+          return;
+        }
+        
+        setPreviewUrl(dataUrl);
+        setShowPreview(true);
         setIsExporting(false);
-        return;
+      } catch (error) {
+        console.error('Erreur lors de l\'export:', error);
+        alert('Une erreur est survenue lors de l\'export.');
+        setIsExporting(false);
       }
-      
-      setPreviewUrl(dataUrl);
-      setShowPreview(true);
-      setIsExporting(false);
-    } catch (error) {
-      console.error('Erreur lors de l\'export:', error);
-      alert('Une erreur est survenue lors de l\'export.');
-      setIsExporting(false);
-    }
+    }, 100);
   };
 
   const handleDownload = () => {
