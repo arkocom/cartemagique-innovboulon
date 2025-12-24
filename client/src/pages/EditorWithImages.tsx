@@ -529,19 +529,44 @@ export default function EditorWithImages() {
       const blob = await response.blob();
       const file = new File([blob], `carte-magique-${Date.now()}.png`, { type: 'image/png' });
       
+      // Essayer d'abord le partage natif
       if (navigator.share && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          title: 'Ma carte de vœux',
-          text: 'Découvrez ma carte de vœux personnalisée !',
-          files: [file],
-        });
-      } else {
-        console.log('API de partage non supportée, ouverture du modal de sauvegarde');
-        setShowSaveModal(true);
+        try {
+          await navigator.share({
+            title: 'Ma carte de vœux',
+            text: 'Découvrez ma carte de vœux personnalisée !',
+            files: [file],
+          });
+          return; // Succès
+        } catch (shareError) {
+          console.warn('Le partage natif a été annulé ou a échoué:', shareError);
+          // Continuer vers les alternatives
+        }
       }
+
+      // Essayer la copie dans le presse-papier (Clipboard API)
+      try {
+        // Vérifier si l'API Clipboard est disponible et supporte les images
+        if (navigator.clipboard && navigator.clipboard.write) {
+          await navigator.clipboard.write([
+            new ClipboardItem({
+              [blob.type]: blob
+            })
+          ]);
+          alert('Image copiée dans le presse-papier ! Vous pouvez maintenant la coller dans votre message.');
+          return; // Succès
+        }
+      } catch (clipboardError) {
+        console.warn('La copie dans le presse-papier a échoué:', clipboardError);
+      }
+
+      // Si tout échoue, ouvrir le modal de sauvegarde manuelle
+      console.log('Méthodes de partage automatiques échouées, ouverture du modal de sauvegarde');
+      setShowSaveModal(true);
+      
     } catch (error) {
-      console.error('Erreur lors du partage:', error);
-      handleDownload();
+      console.error('Erreur globale lors du partage:', error);
+      setShowSaveModal(true);
     }
   };
 
@@ -663,7 +688,7 @@ export default function EditorWithImages() {
                 size="lg"
                 className="px-6 py-3 bg-gradient-to-r from-green-600 to-blue-500 hover:from-green-700 hover:to-blue-600"
               >
-                📱 Partager / Sauvegarder
+                📱 Partager / Copier
               </Button>
               <Button
                 onClick={() => setShowSaveModal(true)}
