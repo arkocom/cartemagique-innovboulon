@@ -1,4 +1,5 @@
 import { TextBlock } from '../pages/EditorWithImages';
+import { createStickerDataUrl } from './stickerUtils';
 
 export interface CardTemplate {
   id: string;
@@ -45,6 +46,9 @@ export const STARTER_TEMPLATES: CardTemplate[] = [
         style: 'modern',
         align: 'center',
       },
+    ],
+    stickers: [
+      { x: 350, y: 50, src: '✨', scale: 0.5, rotation: 0 },
     ]
   },
   {
@@ -83,7 +87,9 @@ export const STARTER_TEMPLATES: CardTemplate[] = [
       }
     ],
     stickers: [
-      { x: 50, y: 50, src: '', scale: 0.8, rotation: -15 }, // Placeholder for sticker logic if needed
+      { x: 50, y: 50, src: '🎄', scale: 0.8, rotation: -15 },
+      { x: 350, y: 50, src: '⭐', scale: 0.6, rotation: 15 },
+      { x: 50, y: 550, src: '🎁', scale: 0.7, rotation: 10 },
     ]
   },
   {
@@ -110,6 +116,11 @@ export const STARTER_TEMPLATES: CardTemplate[] = [
         style: 'classic',
         align: 'center'
       }
+    ],
+    stickers: [
+      { x: 100, y: 100, src: '❤️', scale: 0.8, rotation: -10 },
+      { x: 300, y: 100, src: '❤️', scale: 0.8, rotation: 10 },
+      { x: 200, y: 500, src: '✨', scale: 0.6, rotation: 0 },
     ]
   },
   {
@@ -145,6 +156,12 @@ export const STARTER_TEMPLATES: CardTemplate[] = [
         style: 'classic',
         align: 'center'
       }
+    ],
+    stickers: [
+      { x: 50, y: 50, src: '🎉', scale: 0.9, rotation: -20 },
+      { x: 350, y: 50, src: '🥂', scale: 0.9, rotation: 20 },
+      { x: 50, y: 550, src: '🎆', scale: 0.8, rotation: 10 },
+      { x: 350, y: 550, src: '🎉', scale: 0.8, rotation: -10 },
     ]
   },
   {
@@ -171,6 +188,9 @@ export const STARTER_TEMPLATES: CardTemplate[] = [
         style: 'classic',
         align: 'center'
       }
+    ],
+    stickers: [
+      { x: 200, y: 100, src: '✨', scale: 0.6, rotation: 0 },
     ]
   }
 ];

@@ -412,7 +412,7 @@ export default function EditorWithImages() {
     }
   };
 
-  const applyTemplate = (template: CardTemplate) => {
+  const applyTemplate = async (template: CardTemplate) => {
     // Appliquer les blocs de texte du modèle
     const newBlocks = template.textBlocks.map((block, index) => ({
       ...block,
@@ -427,7 +427,52 @@ export default function EditorWithImages() {
     
     // Appliquer le thème si spécifié
     if (template.themeId) {
-      // Logique pour changer le thème si nécessaire
+      const useAppStore = (await import('@/stores/appStore')).useAppStore;
+      useAppStore.getState().setSelectedThemeId(template.themeId);
+    }
+
+    // Appliquer les stickers si présents
+    if (template.stickers && template.stickers.length > 0) {
+      // Créer les éléments d'image pour les stickers
+      // Note: createStickerDataUrl est utilisé dans templates.ts pour générer les src
+      const newImages: ImageElement[] = template.stickers.map((sticker, index) => {
+        // Si src est un emoji (pas une URL), on doit le convertir
+        // Mais dans notre implémentation actuelle de templates.ts, nous avons déjà des URLs ou des emojis
+        // Pour simplifier, si src commence par 'data:', c'est une image, sinon c'est un emoji
+        
+        let src = sticker.src;
+        if (!src.startsWith('data:') && !src.startsWith('http') && !src.startsWith('/')) {
+           // C'est probablement un emoji, on le convertit à la volée
+           const canvas = document.createElement('canvas');
+           canvas.width = 128;
+           canvas.height = 128;
+           const ctx = canvas.getContext('2d');
+           if (ctx) {
+             ctx.font = '100px serif';
+             ctx.textAlign = 'center';
+             ctx.textBaseline = 'middle';
+             ctx.fillText(sticker.src, 64, 64);
+             src = canvas.toDataURL('image/png');
+           }
+        }
+
+        return {
+          id: 'sticker-' + Date.now() + index,
+          src: src,
+          x: sticker.x,
+          y: sticker.y,
+          width: 100 * (sticker.scale || 1),
+          height: 100 * (sticker.scale || 1),
+          rotation: sticker.rotation || 0,
+          filter: 'none'
+        };
+      });
+      
+      setImageElements(newImages);
+    } else {
+      // Si pas de stickers dans le modèle, on garde les images existantes ou on vide ?
+      // Pour un "preset", on remplace généralement tout
+      setImageElements([]);
     }
     
     setShowTemplates(false);
