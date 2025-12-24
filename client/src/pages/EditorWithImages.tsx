@@ -710,13 +710,22 @@ export default function EditorWithImages() {
             </div>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <div className="flex flex-col gap-2 w-full sm:w-auto">
-                <Button
-                  onClick={handleDownload}
-                  size="lg"
-                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 w-full"
+                {/* Bouton Télécharger transformé en lien direct pour compatibilité mobile maximale */}
+                <a
+                  href={previewUrl}
+                  download={`carte-magique-${Date.now()}.png`}
+                  className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 hover:bg-blue-700 w-full rounded-md text-white font-medium transition-colors"
+                  onClick={(e) => {
+                    // Si c'est un blob, on laisse le lien faire son travail natif
+                    if (previewUrl.startsWith('blob:')) return;
+                    // Sinon (fallback), on empêche le lien et on utilise la fonction JS
+                    e.preventDefault();
+                    handleDownload();
+                  }}
                 >
                   💾 Télécharger l'image
-                </Button>
+                </a>
+                
                 <Button
                   onClick={() => {
                     const subject = encodeURIComponent("Ma carte de vœux personnalisée");
@@ -739,9 +748,14 @@ export default function EditorWithImages() {
                 ✏️ Modifier
               </Button>
             </div>
-            <p className="text-sm text-gray-400 text-center mt-4">
-              💡 Une fois téléchargée, vous pourrez envoyer l'image par WhatsApp, SMS ou Email.
-            </p>
+            <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded text-center">
+              <p className="text-sm text-yellow-200 font-medium mb-1">
+                📱 Sur mobile (iPhone/Android) :
+              </p>
+              <p className="text-xs text-gray-300">
+                Si le bouton "Télécharger" ne fonctionne pas, faites un <strong>appui long sur l'image</strong> ci-dessus et choisissez "Enregistrer l'image".
+              </p>
+            </div>
           </div>
         </div>
       )}
