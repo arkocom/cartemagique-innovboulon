@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import ThemeSelectorComplete from '@/components/ThemeSelectorComplete';
-import { Trash2, Plus, Upload, RotateCw, ZoomIn, ZoomOut, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
+import { Trash2, Plus, Upload, RotateCw, ZoomIn, ZoomOut, AlignLeft, AlignCenter, AlignRight, Wand2 } from 'lucide-react';
 
 type TextStyle = 'classic' | 'modern' | 'elegant' | 'festive';
 
@@ -77,19 +77,43 @@ interface ImageElement {
 export default function EditorWithImages() {
   const [isClient, setIsClient] = useState(false);
   const [showCanvas, setShowCanvas] = useState(false);
-  const [textBlocks, setTextBlocks] = useState<TextBlock[]>([
-    {
-      id: '1',
-      text: 'Joyeux Noël !',
-      x: 200,
-      y: 300,
-      color: '#ffffff',
-      fontSize: 32,
-      style: 'modern',
-      align: 'center',
-    },
-  ]);
-  const [imageElements, setImageElements] = useState<ImageElement[]>([]);
+  const [textBlocks, setTextBlocks] = useState<TextBlock[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('cartemagique_textBlocks');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error('Failed to parse saved textBlocks', e);
+        }
+      }
+    }
+    return [
+      {
+        id: '1',
+        text: 'Joyeux Noël !',
+        x: 200,
+        y: 300,
+        color: '#ffffff',
+        fontSize: 32,
+        style: 'modern',
+        align: 'center',
+      },
+    ];
+  });
+  const [imageElements, setImageElements] = useState<ImageElement[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('cartemagique_imageElements');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error('Failed to parse saved imageElements', e);
+        }
+      }
+    }
+    return [];
+  });
   const [selectedBlockId, setSelectedBlockId] = useState<string>('1');
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -108,6 +132,55 @@ export default function EditorWithImages() {
   const [showTemplates, setShowTemplates] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const MAGIC_TEXTS = {
+    pro: [
+      "Meilleurs vœux de réussite\npour cette nouvelle année.",
+      "Toute l'équipe vous souhaite\nune excellente année 2026.",
+      "Innovation, Succès, Prospérité.\nBonne année !",
+      "Merci de votre confiance.\nJoyeuses fêtes !"
+    ],
+    family: [
+      "Joyeux Noël\nà toute la famille !",
+      "Plein de bisous\npour cette fin d'année.",
+      "Bonheur, Santé, Amour.\nBonne année !",
+      "On pense fort à vous.\nJoyeuses fêtes !"
+    ],
+    love: [
+      "Mon plus beau cadeau,\nc'est toi ❤️",
+      "Pour toujours,\nà tes côtés.",
+      "Joyeuse Saint-Valentin\nmon amour.",
+      "Toi + Moi = ❤️"
+    ],
+    fun: [
+      "Bonne année !\n(Promis, j'arrête le chocolat)",
+      "Santé, Bonheur...\net beaucoup de vacances !",
+      "365 jours de fête\nqui commencent !",
+      "New Year, New Me\n(ou pas 😜)"
+    ],
+    default: [
+      "Meilleurs Vœux !",
+      "Joyeuses Fêtes !",
+      "Bonne Année 2026 !",
+      "Sincères amitiés."
+    ]
+  };
+
+  const generateMagicText = () => {
+    if (!selectedBlockId) return;
+    
+    // Determine category based on current theme or content
+    let category = 'default';
+    if (selectedThemeId.includes('pro')) category = 'pro';
+    else if (selectedThemeId.includes('famille')) category = 'family';
+    else if (selectedThemeId.includes('love')) category = 'love';
+    else if (selectedThemeId.includes('fun')) category = 'fun';
+    
+    const options = MAGIC_TEXTS[category as keyof typeof MAGIC_TEXTS] || MAGIC_TEXTS.default;
+    const randomText = options[Math.floor(Math.random() * options.length)];
+    
+    updateSelectedBlock({ text: randomText });
+  };
 
   const STICKERS = [
     '🎅', '🎄', '🎁', '⭐', '❄️', '⛄', '🦌', '🔔', 
@@ -134,6 +207,19 @@ export default function EditorWithImages() {
       }
     };
   }, []);
+
+  // Auto-save effects
+  useEffect(() => {
+    if (isClient) {
+      localStorage.setItem('cartemagique_textBlocks', JSON.stringify(textBlocks));
+    }
+  }, [textBlocks, isClient]);
+
+  useEffect(() => {
+    if (isClient) {
+      localStorage.setItem('cartemagique_imageElements', JSON.stringify(imageElements));
+    }
+  }, [imageElements, isClient]);
 
   const toggleMusic = () => {
     if (!audioRef.current) return;
@@ -1271,7 +1357,18 @@ export default function EditorWithImages() {
                   {selectedBlock && (
                     <>
                       <div className={`rounded-lg p-4 space-y-4 ${darkMode ? 'bg-gray-800' : 'bg-white shadow-sm'}`}>
-                        <h3 className="text-lg font-bold">Texte</h3>
+                        <div className="flex justify-between items-center">
+                          <h3 className="text-lg font-bold">Texte</h3>
+                          <Button
+                            onClick={generateMagicText}
+                            size="sm"
+                            className="bg-purple-600 hover:bg-purple-700 text-xs"
+                            title="Générer un texte aléatoire"
+                          >
+                            <Wand2 className="w-3 h-3 mr-1" />
+                            Inspiration
+                          </Button>
+                        </div>
                         <textarea
                           value={selectedBlock.text}
                           onChange={(e) => updateSelectedBlock({ text: e.target.value })}
