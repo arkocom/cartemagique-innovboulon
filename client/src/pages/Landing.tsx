@@ -1,6 +1,42 @@
 import { Link } from 'wouter';
+import { useState, useEffect } from 'react';
+import { Download } from 'lucide-react';
 
 export default function Landing() {
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: any) => {
+      // Empêcher Chrome d'afficher la bannière d'installation native immédiatement
+      e.preventDefault();
+      // Stocker l'événement pour pouvoir le déclencher plus tard
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+
+    // Afficher l'invite d'installation
+    deferredPrompt.prompt();
+
+    // Attendre la réponse de l'utilisateur
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`User response to the install prompt: ${outcome}`);
+
+    // On ne peut utiliser l'événement qu'une seule fois
+    setDeferredPrompt(null);
+    setIsInstallable(false);
+  };
+
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white p-4 relative overflow-hidden">
       {/* Effets de fond */}
@@ -33,6 +69,16 @@ export default function Landing() {
               ✨ Créer ma carte
             </button>
           </Link>
+          
+          {isInstallable && (
+            <button 
+              onClick={handleInstallClick}
+              className="px-8 py-4 bg-gray-800 border border-gray-700 text-white font-bold rounded-full shadow-lg hover:bg-gray-700 transition-all flex items-center gap-2"
+            >
+              <Download size={20} />
+              Installer l'app
+            </button>
+          )}
         </div>
       </div>
 
