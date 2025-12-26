@@ -10,9 +10,9 @@ import { Slider } from '@/components/ui/slider';
 import ThemeSelectorComplete from '@/components/ThemeSelectorComplete';
 import { Trash2, Plus, Upload, RotateCw, ZoomIn, ZoomOut, AlignLeft, AlignCenter, AlignRight, Wand2, Undo, Redo, Smartphone, Monitor, Type } from 'lucide-react';
 
-type TextStyle = 'classic' | 'modern' | 'elegant' | 'festive';
+type TextStyle = 'classic' | 'modern' | 'elegant' | 'festive' | string;
 
-const textStyles = {
+const INITIAL_TEXT_STYLES = {
   classic: {
     name: 'Classique',
     fontFamily: 'Georgia, serif',
@@ -136,6 +136,7 @@ export default function EditorWithImages() {
   const fontInputRef = useRef<HTMLInputElement>(null);
   const [customFonts, setCustomFonts] = useState<string[]>([]);
   const [showMagicDust, setShowMagicDust] = useState(false);
+  const [textStyles, setTextStyles] = useState<Record<string, any>>(INITIAL_TEXT_STYLES);
 
   const handleFontUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -157,17 +158,19 @@ export default function EditorWithImages() {
       
       setCustomFonts(prev => [...prev, fontName]);
       
-      // Add to textStyles dynamically (hacky but works for this context)
-      // @ts-ignore
-      textStyles[fontName] = {
-        name: 'Perso',
-        fontFamily: `"${fontName}", sans-serif`,
-        shadowBlur: 5,
-        shadowColor: 'rgba(0,0,0,0.5)',
-        outline: false,
-        outlineWidth: 0,
-        outlineColor: '#000000'
-      };
+      // Add to textStyles dynamically
+      setTextStyles(prev => ({
+        ...prev,
+        [fontName]: {
+          name: 'Perso',
+          fontFamily: `"${fontName}", sans-serif`,
+          shadowBlur: 5,
+          shadowColor: 'rgba(0,0,0,0.5)',
+          outline: false,
+          outlineWidth: 0,
+          outlineColor: '#000000'
+        }
+      }));
       
       if (selectedBlockId) {
         updateSelectedBlock({ style: fontName as any });
@@ -1721,7 +1724,71 @@ export default function EditorWithImages() {
                       </div>
 
                       <div className="bg-gray-800 rounded-lg p-4 space-y-4">
-                        <h3 className="text-lg font-bold">Cadre blanc</h3>
+                        <h3 className="text-lg font-bold">Contour du texte</h3>
+                        <div className="space-y-3">
+                          <label className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              checked={textStyles[selectedBlock.style].outline}
+                              onChange={(e) => {
+                                const newStyles = { ...textStyles };
+                                newStyles[selectedBlock.style] = {
+                                  ...newStyles[selectedBlock.style],
+                                  outline: e.target.checked
+                                };
+                                setTextStyles(newStyles);
+                              }}
+                              className="w-5 h-5 cursor-pointer"
+                            />
+                            <span className="text-sm">Ajouter un contour</span>
+                          </label>
+                          {textStyles[selectedBlock.style].outline && (
+                            <div>
+                              <label className="text-sm text-gray-300 block mb-2">Épaisseur: {textStyles[selectedBlock.style].outlineWidth || 2}px</label>
+                              <input
+                                type="range"
+                                min="1"
+                                max="10"
+                                value={textStyles[selectedBlock.style].outlineWidth || 2}
+                                onChange={(e) => {
+                                  const newStyles = { ...textStyles };
+                                  newStyles[selectedBlock.style] = {
+                                    ...newStyles[selectedBlock.style],
+                                    outlineWidth: Number(e.target.value)
+                                  };
+                                  setTextStyles(newStyles);
+                                }}
+                                className="w-full"
+                              />
+                              <div className="mt-2">
+                                <label className="text-sm text-gray-300 block mb-2">Couleur du contour</label>
+                                <div className="flex gap-2 flex-wrap">
+                                  {['#ffffff', '#000000', '#ff0000', '#fbbf24'].map((color) => (
+                                    <button
+                                      key={color}
+                                      onClick={() => {
+                                        const newStyles = { ...textStyles };
+                                        newStyles[selectedBlock.style] = {
+                                          ...newStyles[selectedBlock.style],
+                                          outlineColor: color
+                                        };
+                                        setTextStyles(newStyles);
+                                      }}
+                                      className={`w-8 h-8 rounded-full border-2 ${
+                                        (textStyles[selectedBlock.style].outlineColor || '#000000') === color ? 'border-white ring-2 ring-white' : 'border-gray-600'
+                                      }`}
+                                      style={{ backgroundColor: color }}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="bg-gray-800 rounded-lg p-4 space-y-4">
+                        <h3 className="text-lg font-bold">Cadre blanc (Image)</h3>
                         <div className="space-y-3">
                           <label className="flex items-center gap-3">
                             <input
