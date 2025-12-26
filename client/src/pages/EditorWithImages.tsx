@@ -135,6 +135,7 @@ export default function EditorWithImages() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fontInputRef = useRef<HTMLInputElement>(null);
   const [customFonts, setCustomFonts] = useState<string[]>([]);
+  const [showMagicDust, setShowMagicDust] = useState(false);
 
   const handleFontUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -277,6 +278,28 @@ export default function EditorWithImages() {
       color: '#00FFFF', // Cyan
       fontSize: 30
     },
+    birthday: {
+      texts: [
+        "🎂 Joyeux Anniversaire ! 🎂\nQue du bonheur !",
+        "Un an de plus...\nmais toujours aussi jeune ! 😉",
+        "🎉 Happy Birthday ! 🎉\nProfite de ta journée !",
+        "Souffle tes bougies 🕯️\net fais un vœu ! ✨"
+      ],
+      style: 'festive',
+      color: '#FF4500', // OrangeRed
+      fontSize: 34
+    },
+    thanks: {
+      texts: [
+        "🙏 Merci infiniment\npour tout.",
+        "Un grand MERCI !\nTu es génial(e). ❤️",
+        "Juste un petit mot\npour te dire merci. ✨",
+        "Ta gentillesse\nme touche beaucoup. 🌹"
+      ],
+      style: 'elegant',
+      color: '#9370DB', // MediumPurple
+      fontSize: 32
+    },
     default: {
       texts: [
         "✨ Meilleurs Vœux !",
@@ -299,6 +322,9 @@ export default function EditorWithImages() {
     else if (selectedThemeId.includes('famille')) category = 'family';
     else if (selectedThemeId.includes('love')) category = 'love';
     else if (selectedThemeId.includes('fun')) category = 'fun';
+    // Randomly mix in birthday/thanks if no specific theme matches or just for variety in default
+    else if (Math.random() > 0.7) category = 'birthday';
+    else if (Math.random() > 0.7) category = 'thanks';
     
     const config = MAGIC_STYLES[category as keyof typeof MAGIC_STYLES] || MAGIC_STYLES.default;
     const randomText = config.texts[Math.floor(Math.random() * config.texts.length)];
@@ -1228,7 +1254,18 @@ export default function EditorWithImages() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-6">
                 {/* Carte */}
                 <div className="lg:col-span-2 order-2 lg:order-1">
-                  <div className="bg-gray-800 rounded-lg p-4 flex items-center justify-center">
+                  <div className="bg-gray-800 rounded-lg p-4 flex items-center justify-center relative overflow-hidden">
+                    {/* Magic Dust Animation Overlay */}
+                    {showMagicDust && (
+                      <div className="absolute inset-0 pointer-events-none z-50 flex items-center justify-center">
+                        <div className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-20"></div>
+                        <div className="absolute text-4xl animate-bounce" style={{ top: '40%', left: '40%' }}>✨</div>
+                        <div className="absolute text-4xl animate-bounce" style={{ top: '30%', left: '60%', animationDelay: '0.1s' }}>✨</div>
+                        <div className="absolute text-4xl animate-bounce" style={{ top: '60%', left: '50%', animationDelay: '0.2s' }}>✨</div>
+                        <div className="absolute text-4xl animate-bounce" style={{ top: '50%', left: '30%', animationDelay: '0.3s' }}>✨</div>
+                        <div className="absolute text-4xl animate-bounce" style={{ top: '45%', left: '70%', animationDelay: '0.4s' }}>✨</div>
+                      </div>
+                    )}
                     <div style={{ aspectRatio: '2/3', maxWidth: '100%', width: '100%', maxHeight: '80vh' }} ref={containerRef}>
               <div className="flex justify-center mb-4 gap-2">
                 <button
@@ -1587,6 +1624,31 @@ export default function EditorWithImages() {
 
                       <div className={`rounded-lg p-4 space-y-4 ${darkMode ? 'bg-gray-800' : 'bg-white shadow-sm'}`}>
                         <h3 className="text-lg font-bold">Style de texte</h3>
+                        {/* Text Alignment Controls */}
+                        <div className="flex gap-2 mb-4 p-1 bg-gray-100 dark:bg-gray-700 rounded-lg w-fit mx-auto">
+                          <button
+                            onClick={() => updateSelectedBlock({ align: 'left' })}
+                            className={`p-2 rounded transition-colors ${selectedBlock.align === 'left' ? 'bg-white dark:bg-gray-600 shadow-sm' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+                            title="Aligner à gauche"
+                          >
+                            <AlignLeft size={18} />
+                          </button>
+                          <button
+                            onClick={() => updateSelectedBlock({ align: 'center' })}
+                            className={`p-2 rounded transition-colors ${selectedBlock.align === 'center' ? 'bg-white dark:bg-gray-600 shadow-sm' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+                            title="Centrer"
+                          >
+                            <AlignCenter size={18} />
+                          </button>
+                          <button
+                            onClick={() => updateSelectedBlock({ align: 'right' })}
+                            className={`p-2 rounded transition-colors ${selectedBlock.align === 'right' ? 'bg-white dark:bg-gray-600 shadow-sm' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+                            title="Aligner à droite"
+                          >
+                            <AlignRight size={18} />
+                          </button>
+                        </div>
+
                         <div className="grid grid-cols-2 gap-2">
                           {Object.entries(textStyles).map(([key, style]) => (
                             <button
