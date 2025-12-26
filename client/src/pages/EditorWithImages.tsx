@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Link } from 'wouter';
 import { useAppStore } from '@/stores/appStore';
 import { themes } from '@/lib/themes';
@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import ThemeSelectorComplete from '@/components/ThemeSelectorComplete';
-import { Trash2, Plus, Upload, RotateCw, ZoomIn, ZoomOut, AlignLeft, AlignCenter, AlignRight, Wand2 } from 'lucide-react';
+import { Trash2, Plus, Upload, RotateCw, ZoomIn, ZoomOut, AlignLeft, AlignCenter, AlignRight, Wand2, Undo, Redo, Smartphone, Monitor, Type } from 'lucide-react';
 
 type TextStyle = 'classic' | 'modern' | 'elegant' | 'festive';
 
@@ -131,7 +131,106 @@ export default function EditorWithImages() {
   const [activeTab, setActiveTab] = useState<'carte' | 'parametres'>('carte');
   const [showTemplates, setShowTemplates] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [aspectRatio, setAspectRatio] = useState<'standard' | 'story'>('standard'); // standard (400x600) or story (338x600 - 9:16 approx)
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const fontInputRef = useRef<HTMLInputElement>(null);
+  const [customFonts, setCustomFonts] = useState<string[]>([]);
+
+  const handleFontUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const fontData = event.target?.result as string;
+      const fontName = `CustomFont_${Date.now()}`;
+      
+      const newStyle = document.createElement('style');
+      newStyle.appendChild(document.createTextNode(`
+        @font-face {
+          font-family: "${fontName}";
+          src: url("${fontData}");
+        }
+      `));
+      document.head.appendChild(newStyle);
+      
+      setCustomFonts(prev => [...prev, fontName]);
+      
+      // Add to textStyles dynamically (hacky but works for this context)
+      // @ts-ignore
+      textStyles[fontName] = {
+        name: 'Perso',
+        fontFamily: `"${fontName}", sans-serif`,
+        shadowBlur: 5,
+        shadowColor: 'rgba(0,0,0,0.5)',
+        outline: false,
+        outlineWidth: 0,
+        outlineColor: '#000000'
+      };
+      
+      if (selectedBlockId) {
+        updateSelectedBlock({ style: fontName as any });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // History state
+  const [history, setHistory] = useState<{textBlocks: TextBlock[], imageElements: ImageElement[]}[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const isUndoRedoAction = useRef(false);
+
+  const addToHistory = useCallback(() => {
+    if (isUndoRedoAction.current) return;
+    
+    const currentState = {
+      textBlocks: JSON.parse(JSON.stringify(textBlocks)),
+      imageElements: JSON.parse(JSON.stringify(imageElements))
+    };
+
+    setHistory(prev => {
+      const newHistory = prev.slice(0, historyIndex + 1);
+      return [...newHistory, currentState];
+    });
+    setHistoryIndex(prev => prev + 1);
+  }, [textBlocks, imageElements, historyIndex]);
+
+  // Initialize history
+  useEffect(() => {
+    if (history.length === 0 && textBlocks.length > 0) {
+      addToHistory();
+    }
+  }, []);
+
+  // Save to history on changes (debounced)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      addToHistory();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [textBlocks, imageElements]);
+
+  const handleUndo = () => {
+    if (historyIndex > 0) {
+      isUndoRedoAction.current = true;
+      const prevState = history[historyIndex - 1];
+      setTextBlocks(prevState.textBlocks);
+      setImageElements(prevState.imageElements);
+      setHistoryIndex(prev => prev - 1);
+      setTimeout(() => { isUndoRedoAction.current = false; }, 100);
+    }
+  };
+
+  const handleRedo = () => {
+    if (historyIndex < history.length - 1) {
+      isUndoRedoAction.current = true;
+      const nextState = history[historyIndex + 1];
+      setTextBlocks(nextState.textBlocks);
+      setImageElements(nextState.imageElements);
+      setHistoryIndex(prev => prev + 1);
+      setTimeout(() => { isUndoRedoAction.current = false; }, 100);
+    }
+  };
 
   const MAGIC_TEXTS = {
     pro: [
@@ -279,9 +378,16 @@ export default function EditorWithImages() {
     img.crossOrigin = 'anonymous';
     img.src = selectedTheme.image;
     
+    const canvasWidth = aspectRatio === 'story' ? 338 : 400; // 338x600 is approx 9:16
+    
     img.onload = () => {
       ctx.clearRect(0, 0, 400, 600);
-      ctx.drawImage(img, 0, 0, 400, 600);
+      
+      // Draw background with "cover" fit
+      const scale = Math.max(canvasWidth / img.width, 600 / img.height);
+      const x = (canvasWidth / 2) - (img.width / 2) * scale;
+      const y = (600 / 2) - (img.height / 2) * scale;
+      ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
       
       // Dessiner les images
       imageElements.forEach((imgElem) => {
@@ -381,23 +487,25 @@ export default function EditorWithImages() {
         // Bordure gauche
         ctx.fillRect(0, 0, frameWidth, 600);
         // Bordure droite
-        ctx.fillRect(400 - frameWidth, 0, frameWidth, 600);
+        ctx.fillRect(canvasWidth - frameWidth, 0, frameWidth, 600);
         // Bordure haut
-        ctx.fillRect(0, 0, 400, frameWidth);
+        ctx.fillRect(0, 0, canvasWidth, frameWidth);
         // Bordure bas
-        ctx.fillRect(0, 600 - frameWidth, 400, frameWidth);
+        ctx.fillRect(0, 600 - frameWidth, canvasWidth, frameWidth);
       }
     };
     // img.src est déjà défini plus haut
-  }, [showCanvas, textBlocks, imageElements, selectedTheme.image, showFrame, frameWidth, stickerTint]);
+  }, [showCanvas, textBlocks, imageElements, selectedTheme.image, showFrame, frameWidth, stickerTint, aspectRatio]);
 
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    const canvasWidth = aspectRatio === 'story' ? 338 : 400;
+
     const rect = canvas.getBoundingClientRect();
-    const scaleX = 400 / rect.width;
+    const scaleX = canvasWidth / rect.width;
     const scaleY = 600 / rect.height;
     const x = (e.clientX - rect.left) * scaleX;
     const y = (e.clientY - rect.top) * scaleY;
@@ -857,7 +965,24 @@ export default function EditorWithImages() {
         <h1 className="text-xl md:text-2xl font-bold text-center flex-1">
           ✨ CarteMagique
         </h1>
-        <div className="w-20"></div>
+        <div className="flex gap-2">
+          <button 
+            onClick={handleUndo} 
+            disabled={historyIndex <= 0}
+            className={`p-2 rounded-full transition-colors ${historyIndex <= 0 ? 'text-gray-600 cursor-not-allowed' : 'text-white hover:bg-gray-800'}`}
+            title="Annuler"
+          >
+            <Undo size={20} />
+          </button>
+          <button 
+            onClick={handleRedo} 
+            disabled={historyIndex >= history.length - 1}
+            className={`p-2 rounded-full transition-colors ${historyIndex >= history.length - 1 ? 'text-gray-600 cursor-not-allowed' : 'text-white hover:bg-gray-800'}`}
+            title="Rétablir"
+          >
+            <Redo size={20} />
+          </button>
+        </div>
       </header>
 
       {/* Modal de sélection de modèles */}
@@ -1069,26 +1194,34 @@ export default function EditorWithImages() {
                 <div className="lg:col-span-2 order-2 lg:order-1">
                   <div className="bg-gray-800 rounded-lg p-4 flex items-center justify-center">
                     <div style={{ aspectRatio: '2/3', maxWidth: '100%', width: '100%', maxHeight: '80vh' }} ref={containerRef}>
-                      <canvas
-                        ref={canvasRef}
-                        width={400}
-                        height={600}
-                        onMouseDown={handleCanvasMouseDown}
-                        onMouseMove={handleCanvasMouseMove}
-                        onMouseUp={handleCanvasMouseUp}
-                        onMouseLeave={handleCanvasMouseUp}
-                        onTouchStart={handleCanvasTouchStart}
-                        onTouchMove={handleCanvasTouchMove}
-                        onTouchEnd={handleCanvasTouchEnd}
-                        style={{ 
-                          width: '100%', 
-                          height: '100%', 
-                          display: 'block',
-                          cursor: isDragging ? 'grabbing' : 'grab',
-                          touchAction: 'none',
-                          objectFit: 'contain'
-                        }}
-                      />
+              <div className="flex justify-center mb-4 gap-2">
+                <button
+                  onClick={() => setAspectRatio('standard')}
+                  className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${aspectRatio === 'standard' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'}`}
+                >
+                  <Monitor size={14} /> Standard
+                </button>
+                <button
+                  onClick={() => setAspectRatio('story')}
+                  className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${aspectRatio === 'story' ? 'bg-pink-600 text-white' : 'bg-gray-700 text-gray-300'}`}
+                >
+                  <Smartphone size={14} /> Story (9:16)
+                </button>
+              </div>
+              <canvas
+                ref={canvasRef}
+                width={aspectRatio === 'story' ? 338 : 400}
+                height={600}
+                className="h-auto shadow-2xl rounded-lg cursor-crosshair touch-none mx-auto"
+                style={{ maxWidth: '100%', maxHeight: '70vh', aspectRatio: aspectRatio === 'story' ? '9/16' : '2/3' }}
+                onMouseDown={handleCanvasMouseDown}
+                onMouseMove={handleCanvasMouseMove}
+                onMouseUp={handleCanvasMouseUp}
+                onMouseLeave={handleCanvasMouseUp}
+                onTouchStart={handleCanvasTouchStart}
+                onTouchMove={handleCanvasTouchMove}
+                onTouchEnd={() => setIsDragging(false)}
+              />
                     </div>
                   </div>
                   <p className="text-sm text-gray-400 text-center mt-2">
@@ -1419,22 +1552,55 @@ export default function EditorWithImages() {
                       <div className={`rounded-lg p-4 space-y-4 ${darkMode ? 'bg-gray-800' : 'bg-white shadow-sm'}`}>
                         <h3 className="text-lg font-bold">Style de texte</h3>
                         <div className="grid grid-cols-2 gap-2">
-                          {(Object.keys(textStyles) as TextStyle[]).map((styleKey) => (
+                          {Object.entries(textStyles).map(([key, style]) => (
                             <button
-                              key={styleKey}
-                              onClick={() => updateSelectedBlock({ style: styleKey })}
-                              className={`px-4 py-3 md:py-2 rounded-lg border-2 transition-all text-sm md:text-xs ${
-                                selectedBlock.style === styleKey
-                                  ? 'border-blue-500 bg-blue-500/20 text-blue-400'
+                              key={key}
+                              onClick={() => updateSelectedBlock({ style: key as any })}
+                              className={`p-2 rounded border text-sm transition-colors ${
+                                selectedBlock.style === key
+                                  ? 'bg-blue-600 border-blue-500 text-white'
                                   : darkMode 
-                                    ? 'border-gray-600 bg-gray-700 text-gray-300 hover:border-gray-500' 
-                                    : 'border-gray-300 bg-gray-100 text-gray-700 hover:border-gray-400'
+                                    ? 'bg-gray-700 border-gray-600 hover:bg-gray-600 text-gray-300' 
+                                    : 'bg-white border-gray-300 hover:bg-gray-100 text-gray-700'
                               }`}
-                              style={{ fontFamily: textStyles[styleKey].fontFamily }}
+                              style={{ fontFamily: style.fontFamily }}
                             >
-                              {textStyles[styleKey].name}
+                              {style.name}
                             </button>
                           ))}
+                          {customFonts.map((fontName) => (
+                            <button
+                              key={fontName}
+                              onClick={() => updateSelectedBlock({ style: fontName as any })}
+                              className={`p-2 rounded border text-sm transition-colors ${
+                                selectedBlock.style === fontName
+                                  ? 'bg-blue-600 border-blue-500 text-white'
+                                  : darkMode 
+                                    ? 'bg-gray-700 border-gray-600 hover:bg-gray-600 text-gray-300' 
+                                    : 'bg-white border-gray-300 hover:bg-gray-100 text-gray-700'
+                              }`}
+                              style={{ fontFamily: `"${fontName}", sans-serif` }}
+                            >
+                              Ma Police
+                            </button>
+                          ))}
+                          <button
+                            onClick={() => fontInputRef.current?.click()}
+                            className={`p-2 rounded border text-sm transition-colors border-dashed flex items-center justify-center gap-2 ${
+                              darkMode 
+                                ? 'bg-transparent border-gray-500 hover:bg-gray-800 text-gray-400' 
+                                : 'bg-transparent border-gray-400 hover:bg-gray-100 text-gray-600'
+                            }`}
+                          >
+                            <Type size={14} /> Importer
+                          </button>
+                          <input
+                            ref={fontInputRef}
+                            type="file"
+                            accept=".ttf,.otf,.woff,.woff2"
+                            onChange={handleFontUpload}
+                            className="hidden"
+                          />
                         </div>
                       </div>
 
