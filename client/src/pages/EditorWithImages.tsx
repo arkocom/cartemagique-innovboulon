@@ -138,7 +138,8 @@ export default function EditorWithImages() {
   const [showMagicDust, setShowMagicDust] = useState(false);
   const [textStyles, setTextStyles] = useState<Record<string, any>>(INITIAL_TEXT_STYLES);
   const [backgroundColor, setBackgroundColor] = useState<string>(''); // Empty string means use image
-
+  const [showCollageMenu, setShowCollageMenu] = useState(false);
+  
   const handleFontUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -1450,19 +1451,24 @@ export default function EditorWithImages() {
                         <Upload className="w-4 h-4 mr-2" />
                         Photo perso
                       </Button>
-                      <div className="relative group">
+                      <div className="relative">
                         <Button
+                          onClick={() => setShowCollageMenu(!showCollageMenu)}
                           size="lg"
                           variant="outline"
-                          className="w-full border-blue-600 text-blue-400 hover:bg-blue-900/20 text-base md:text-sm md:py-2 py-3"
+                          className={`w-full border-blue-600 text-blue-400 hover:bg-blue-900/20 text-base md:text-sm md:py-2 py-3 ${showCollageMenu ? 'bg-blue-900/20' : ''}`}
                         >
                           <LayoutGrid className="w-4 h-4 mr-2" />
                           Collage
                         </Button>
-                        <div className="absolute top-full left-0 right-0 mt-2 bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-2 z-10 hidden group-hover:block hover:block">
+                        {showCollageMenu && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-2 z-20">
                           <div className="grid grid-cols-3 gap-2">
                             <button 
-                              onClick={() => applyCollageLayout(1)}
+                              onClick={() => {
+                                applyCollageLayout(1);
+                                setShowCollageMenu(false);
+                              }}
                               className="p-2 hover:bg-gray-700 rounded flex flex-col items-center"
                               title="1 Photo"
                             >
@@ -1470,7 +1476,10 @@ export default function EditorWithImages() {
                               <span className="text-xs mt-1">1</span>
                             </button>
                             <button 
-                              onClick={() => applyCollageLayout(2)}
+                              onClick={() => {
+                                applyCollageLayout(2);
+                                setShowCollageMenu(false);
+                              }}
                               className="p-2 hover:bg-gray-700 rounded flex flex-col items-center"
                               title="2 Photos"
                             >
@@ -1480,7 +1489,10 @@ export default function EditorWithImages() {
                               <span className="text-xs mt-1">2</span>
                             </button>
                             <button 
-                              onClick={() => applyCollageLayout(3)}
+                              onClick={() => {
+                                applyCollageLayout(3);
+                                setShowCollageMenu(false);
+                              }}
                               className="p-2 hover:bg-gray-700 rounded flex flex-col items-center"
                               title="3 Photos"
                             >
@@ -1493,7 +1505,10 @@ export default function EditorWithImages() {
                               <span className="text-xs mt-1">3</span>
                             </button>
                             <button 
-                              onClick={() => applyCollageLayout(4)}
+                              onClick={() => {
+                                applyCollageLayout(4);
+                                setShowCollageMenu(false);
+                              }}
                               className="p-2 hover:bg-gray-700 rounded flex flex-col items-center"
                               title="4 Photos"
                             >
@@ -1507,6 +1522,7 @@ export default function EditorWithImages() {
                             </button>
                           </div>
                         </div>
+                        )}
                       </div>
                     </div>
                     <input
