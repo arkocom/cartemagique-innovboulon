@@ -137,6 +137,7 @@ export default function EditorWithImages() {
   const [customFonts, setCustomFonts] = useState<string[]>([]);
   const [showMagicDust, setShowMagicDust] = useState(false);
   const [textStyles, setTextStyles] = useState<Record<string, any>>(INITIAL_TEXT_STYLES);
+  const [backgroundColor, setBackgroundColor] = useState<string>(''); // Empty string means use image
 
   const handleFontUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1289,7 +1290,12 @@ export default function EditorWithImages() {
                 width={aspectRatio === 'story' ? 338 : 400}
                 height={600}
                 className="h-auto shadow-2xl rounded-lg cursor-crosshair touch-none mx-auto"
-                style={{ maxWidth: '100%', maxHeight: '70vh', aspectRatio: aspectRatio === 'story' ? '9/16' : '2/3' }}
+                style={{ 
+                  maxWidth: '100%', 
+                  maxHeight: '70vh', 
+                  aspectRatio: aspectRatio === 'story' ? '9/16' : '2/3',
+                  backgroundColor: backgroundColor || 'transparent'
+                }}
                 onMouseDown={handleCanvasMouseDown}
                 onMouseMove={handleCanvasMouseMove}
                 onMouseUp={handleCanvasMouseUp}
@@ -1341,14 +1347,30 @@ export default function EditorWithImages() {
                       </div>
                     </div>
 
-                    <Button
-                      onClick={() => fileInputRef.current?.click()}
-                      size="lg"
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-base md:text-sm md:py-2 py-3"
-                    >
-                      <Upload className="w-4 h-4 mr-2" />
-                      Ajouter une photo perso
-                    </Button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        onClick={() => fileInputRef.current?.click()}
+                        size="lg"
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-base md:text-sm md:py-2 py-3"
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        Photo perso
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          // Trigger file input but set a flag or use a different handler for collage
+                          // For now, we reuse the same input but maybe we can add a specific collage mode later
+                          // The current implementation already supports adding multiple images which acts as a collage
+                          fileInputRef.current?.click();
+                        }}
+                        size="lg"
+                        variant="outline"
+                        className="w-full border-blue-600 text-blue-400 hover:bg-blue-900/20 text-base md:text-sm md:py-2 py-3"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Collage
+                      </Button>
+                    </div>
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -1706,8 +1728,38 @@ export default function EditorWithImages() {
                       </div>
 
                       <div className="bg-gray-800 rounded-lg p-4 space-y-4">
-                        <h3 className="text-lg font-bold">Couleur du texte</h3>
-                        <div className="flex gap-2 flex-wrap">
+                        <h3 className="text-lg font-bold">Fond</h3>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="text-sm text-gray-300 block mb-2">Couleur unie</label>
+                            <div className="flex gap-2 flex-wrap">
+                              <button
+                                onClick={() => setBackgroundColor('')}
+                                className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${
+                                  backgroundColor === '' ? 'border-white ring-2 ring-white' : 'border-gray-600'
+                                }`}
+                                title="Image (par défaut)"
+                              >
+                                <span className="text-xs">IMG</span>
+                              </button>
+                              {['#1a1a1a', '#ffffff', '#f87171', '#fbbf24', '#34d399', '#60a5fa', '#818cf8', '#f472b6'].map((color) => (
+                                <button
+                                  key={color}
+                                  onClick={() => setBackgroundColor(color)}
+                                  className={`w-8 h-8 rounded-full border-2 ${
+                                    backgroundColor === color ? 'border-white ring-2 ring-white' : 'border-gray-600'
+                                  }`}
+                                  style={{ backgroundColor: color }}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-gray-800 rounded-lg p-4 space-y-4">
+                        <h3 className="text-lg font-bold">Filtres photo</h3>
+                        <div className="grid grid-cols-2 gap-2">
                           {['#ffffff', '#000000', '#ff0000', '#fbbf24'].map(
                             (color) => (
                               <button
@@ -1839,7 +1891,67 @@ export default function EditorWithImages() {
                 size="lg"
                 className="px-6 md:px-8 py-3 md:py-4 text-base md:text-base bg-gradient-to-r from-green-600 to-blue-500 hover:from-green-700 hover:to-blue-600"
               >
-                {isExporting ? '⏳ Préparation...' : '📥 Partager ma carte'}
+                {isExporting ? '⏳ Préparation...' : '📥 Télécharger'}
+              </Button>
+              <Button
+                onClick={() => {
+                  if (isExporting) return;
+                  setIsExporting(true);
+                  // Wait for canvas to be ready
+                  setTimeout(() => {
+                    const canvas = canvasRef.current;
+                    if (!canvas) {
+                      setIsExporting(false);
+                      return;
+                    }
+                    
+                    // Convert canvas to blob
+                    canvas.toBlob((blob) => {
+                      if (!blob) {
+                        setIsExporting(false);
+                        return;
+                      }
+                      
+                      // Create a file from the blob
+                      const file = new File([blob], "carte-magique.png", { type: "image/png" });
+                      
+                      // Check if Web Share API is supported and can share files
+                      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                        navigator.share({
+                          files: [file],
+                          title: 'Ma Carte Magique',
+                          text: 'Regarde la carte que j\'ai créée ! ✨'
+                        })
+                        .then(() => setIsExporting(false))
+                        .catch((error) => {
+                          console.error('Error sharing:', error);
+                          setIsExporting(false);
+                        });
+                      } else {
+                        // Fallback for WhatsApp Web or unsupported browsers
+                        // We can't directly share image to WhatsApp Web via URL scheme, 
+                        // so we just open WhatsApp with text and let user attach image manually
+                        // or show a toast saying "Image téléchargée, ouvrez WhatsApp pour l'envoyer"
+                        
+                        // Download image first
+                        const link = document.createElement('a');
+                        link.download = `carte-magique-${Date.now()}.png`;
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                        
+                        // Open WhatsApp
+                        window.open(`https://wa.me/?text=${encodeURIComponent("Regarde la carte que j'ai créée avec CarteMagique ! ✨")}`, '_blank');
+                        setIsExporting(false);
+                      }
+                    }, 'image/png');
+                  }, 100);
+                }}
+                disabled={isExporting}
+                size="lg"
+                className="px-6 md:px-8 py-3 md:py-4 text-base md:text-base bg-[#25D366] hover:bg-[#128C7E] text-white border-none"
+              >
+                <Smartphone className="w-5 h-5 mr-2" />
+                WhatsApp
               </Button>
               <Button
                 onClick={() => setShowCanvas(false)}
