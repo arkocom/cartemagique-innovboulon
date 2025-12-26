@@ -232,37 +232,62 @@ export default function EditorWithImages() {
     }
   };
 
-  const MAGIC_TEXTS = {
-    pro: [
-      "Meilleurs vœux de réussite\npour cette nouvelle année.",
-      "Toute l'équipe vous souhaite\nune excellente année 2026.",
-      "Innovation, Succès, Prospérité.\nBonne année !",
-      "Merci de votre confiance.\nJoyeuses fêtes !"
-    ],
-    family: [
-      "Joyeux Noël\nà toute la famille !",
-      "Plein de bisous\npour cette fin d'année.",
-      "Bonheur, Santé, Amour.\nBonne année !",
-      "On pense fort à vous.\nJoyeuses fêtes !"
-    ],
-    love: [
-      "Mon plus beau cadeau,\nc'est toi ❤️",
-      "Pour toujours,\nà tes côtés.",
-      "Joyeuse Saint-Valentin\nmon amour.",
-      "Toi + Moi = ❤️"
-    ],
-    fun: [
-      "Bonne année !\n(Promis, j'arrête le chocolat)",
-      "Santé, Bonheur...\net beaucoup de vacances !",
-      "365 jours de fête\nqui commencent !",
-      "New Year, New Me\n(ou pas 😜)"
-    ],
-    default: [
-      "Meilleurs Vœux !",
-      "Joyeuses Fêtes !",
-      "Bonne Année 2026 !",
-      "Sincères amitiés."
-    ]
+  const MAGIC_STYLES = {
+    pro: {
+      texts: [
+        "✨ Meilleurs vœux de réussite\npour cette nouvelle année.",
+        "Toute l'équipe vous souhaite\nune excellente année 2026. 🤝",
+        "🚀 Innovation, Succès, Prospérité.\nBonne année !",
+        "Merci de votre confiance.\nJoyeuses fêtes ! ✨"
+      ],
+      style: 'elegant',
+      color: '#FFD700', // Gold
+      fontSize: 28
+    },
+    family: {
+      texts: [
+        "🎄 Joyeux Noël 🎄\nà toute la famille !",
+        "Plein de bisous 😘\npour cette fin d'année.",
+        "❤️ Bonheur, Santé, Amour.\nBonne année !",
+        "On pense fort à vous.\nJoyeuses fêtes ! 🎁"
+      ],
+      style: 'classic',
+      color: '#FFFFFF',
+      fontSize: 32
+    },
+    love: {
+      texts: [
+        "Mon plus beau cadeau,\nc'est toi ❤️",
+        "Pour toujours,\nà tes côtés. ✨",
+        "🌹 Joyeuse Saint-Valentin\nmon amour.",
+        "Toi + Moi = ❤️"
+      ],
+      style: 'elegant',
+      color: '#FF69B4', // HotPink
+      fontSize: 36
+    },
+    fun: {
+      texts: [
+        "🎉 Bonne année !\n(Promis, j'arrête le chocolat)",
+        "Santé, Bonheur...\net beaucoup de vacances ! 🏖️",
+        "365 jours de fête\nqui commencent ! 🥳",
+        "New Year, New Me\n(ou pas 😜)"
+      ],
+      style: 'festive',
+      color: '#00FFFF', // Cyan
+      fontSize: 30
+    },
+    default: {
+      texts: [
+        "✨ Meilleurs Vœux !",
+        "🎉 Joyeuses Fêtes !",
+        "Bonne Année 2026 !",
+        "Sincères amitiés."
+      ],
+      style: 'modern',
+      color: '#FFFFFF',
+      fontSize: 32
+    }
   };
 
   const generateMagicText = () => {
@@ -275,10 +300,21 @@ export default function EditorWithImages() {
     else if (selectedThemeId.includes('love')) category = 'love';
     else if (selectedThemeId.includes('fun')) category = 'fun';
     
-    const options = MAGIC_TEXTS[category as keyof typeof MAGIC_TEXTS] || MAGIC_TEXTS.default;
-    const randomText = options[Math.floor(Math.random() * options.length)];
+    const config = MAGIC_STYLES[category as keyof typeof MAGIC_STYLES] || MAGIC_STYLES.default;
+    const randomText = config.texts[Math.floor(Math.random() * config.texts.length)];
     
-    updateSelectedBlock({ text: randomText });
+    // Smart font size adjustment based on text length to prevent overflow
+    let adjustedFontSize = config.fontSize;
+    if (randomText.length > 50) adjustedFontSize *= 0.8;
+    if (randomText.length > 80) adjustedFontSize *= 0.7;
+
+    updateSelectedBlock({ 
+      text: randomText,
+      style: config.style as any,
+      color: config.color,
+      fontSize: adjustedFontSize,
+      align: 'center' // Always center magic text for better layout
+    });
   };
 
   const STICKERS = [
