@@ -551,60 +551,68 @@ export default function EditorWithImages() {
       ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
       
       // Dessiner les images
-      imageElements.forEach((imgElem) => {
-        const image = new Image();
-        image.crossOrigin = 'anonymous';
-        image.src = imgElem.src;
-        
-        image.onload = () => {
-          ctx.save();
-          ctx.translate(imgElem.x + imgElem.width / 2, imgElem.y + imgElem.height / 2);
-          ctx.rotate((imgElem.rotation * Math.PI) / 180);
+      // Nous devons attendre que toutes les images soient chargées avant de dessiner le texte
+      // pour s'assurer que le texte est toujours au-dessus
+      const imagePromises = imageElements.map((imgElem) => {
+        return new Promise<void>((resolve) => {
+          const image = new Image();
+          image.crossOrigin = 'anonymous';
+          image.src = imgElem.src;
           
-          // Apply filters
-          if (imgElem.filter && imgElem.filter !== 'none') {
-            if (imgElem.filter === 'grayscale') {
-              ctx.filter = 'grayscale(100%)';
-            } else if (imgElem.filter === 'sepia') {
-              ctx.filter = 'sepia(100%)';
-            } else if (imgElem.filter === 'vintage') {
-              ctx.filter = 'sepia(50%) contrast(120%) brightness(90%)';
-            }
-          }
-
-          // Apply tint if specified and not 'original'
-          if (imgElem.tint && imgElem.tint !== 'original') {
-            // Create a temporary canvas for tinting
-            const tintCanvas = document.createElement('canvas');
-            tintCanvas.width = image.width;
-            tintCanvas.height = image.height;
-            const tintCtx = tintCanvas.getContext('2d');
+          image.onload = () => {
+            ctx.save();
+            ctx.translate(imgElem.x + imgElem.width / 2, imgElem.y + imgElem.height / 2);
+            ctx.rotate((imgElem.rotation * Math.PI) / 180);
             
-            if (tintCtx) {
-              // Draw original image
-              tintCtx.drawImage(image, 0, 0);
+            // Apply filters
+            if (imgElem.filter && imgElem.filter !== 'none') {
+              if (imgElem.filter === 'grayscale') {
+                ctx.filter = 'grayscale(100%)';
+              } else if (imgElem.filter === 'sepia') {
+                ctx.filter = 'sepia(100%)';
+              } else if (imgElem.filter === 'vintage') {
+                ctx.filter = 'sepia(50%) contrast(120%) brightness(90%)';
+              }
+            }
+
+            // Apply tint if specified and not 'original'
+            if (imgElem.tint && imgElem.tint !== 'original') {
+              // Create a temporary canvas for tinting
+              const tintCanvas = document.createElement('canvas');
+              tintCanvas.width = image.width;
+              tintCanvas.height = image.height;
+              const tintCtx = tintCanvas.getContext('2d');
               
-              // Set composite operation to source-in to only draw on non-transparent pixels
-              tintCtx.globalCompositeOperation = 'source-in';
-              tintCtx.fillStyle = imgElem.tint;
-              tintCtx.fillRect(0, 0, tintCanvas.width, tintCanvas.height);
-              
-              // Draw the tinted version
-              ctx.drawImage(tintCanvas, -imgElem.width / 2, -imgElem.height / 2, imgElem.width, imgElem.height);
+              if (tintCtx) {
+                // Draw original image
+                tintCtx.drawImage(image, 0, 0);
+                
+                // Set composite operation to source-in to only draw on non-transparent pixels
+                tintCtx.globalCompositeOperation = 'source-in';
+                tintCtx.fillStyle = imgElem.tint;
+                tintCtx.fillRect(0, 0, tintCanvas.width, tintCanvas.height);
+                
+                // Draw the tinted version
+                ctx.drawImage(tintCanvas, -imgElem.width / 2, -imgElem.height / 2, imgElem.width, imgElem.height);
+              } else {
+                // Fallback if tinting fails
+                ctx.drawImage(image, -imgElem.width / 2, -imgElem.height / 2, imgElem.width, imgElem.height);
+              }
             } else {
-              // Fallback if tinting fails
               ctx.drawImage(image, -imgElem.width / 2, -imgElem.height / 2, imgElem.width, imgElem.height);
             }
-          } else {
-            ctx.drawImage(image, -imgElem.width / 2, -imgElem.height / 2, imgElem.width, imgElem.height);
-          }
-          
-          ctx.restore();
-        };
+            
+            ctx.restore();
+            resolve();
+          };
+          image.onerror = () => resolve(); // Resolve even on error to continue
+        });
       });
-      
-      // Dessiner les blocs de texte
-      textBlocks.forEach((block) => {
+
+      // Attendre que toutes les images soient dessinées avant de dessiner le texte
+      Promise.all(imagePromises).then(() => {
+        // Dessiner les blocs de texte
+        textBlocks.forEach((block) => {
         const style = textStyles[block.style];
         
         ctx.font = `bold ${block.fontSize}px ${style.fontFamily}`;
@@ -637,23 +645,25 @@ export default function EditorWithImages() {
           ctx.fillText(line, block.x, lineY);
         });
         
-        ctx.shadowColor = 'transparent';
-        ctx.shadowBlur = 0;
-      });
-      
-      // Dessiner le cadre blanc si activé
-      if (showFrame && frameWidth > 0) {
+          ctx.shadowColor = 'transparent';
+          ctx.shadowBlur = 0;
+        });
+        
+        // Dessiner le cadre blanc si activé (doit être au-dessus de tout sauf le texte ?)
+        // En fait, le cadre est généralement autour, donc on peut le dessiner à la fin
+        if (showFrame && frameWidth > 0) {
         // Dessiner le cadre blanc autour de l'image de fond
         ctx.fillStyle = '#ffffff';
         // Bordure gauche
         ctx.fillRect(0, 0, frameWidth, 600);
-        // Bordure droite
-        ctx.fillRect(canvasWidth - frameWidth, 0, frameWidth, 600);
-        // Bordure haut
-        ctx.fillRect(0, 0, canvasWidth, frameWidth);
-        // Bordure bas
-        ctx.fillRect(0, 600 - frameWidth, canvasWidth, frameWidth);
-      }
+          // Bordure droite
+          ctx.fillRect(canvasWidth - frameWidth, 0, frameWidth, 600);
+          // Bordure haut
+          ctx.fillRect(0, 0, canvasWidth, frameWidth);
+          // Bordure bas
+          ctx.fillRect(0, 600 - frameWidth, canvasWidth, frameWidth);
+        }
+      });
     };
     // img.src est déjà défini plus haut
   }, [showCanvas, textBlocks, imageElements, selectedTheme.image, showFrame, frameWidth, stickerTint, aspectRatio]);
@@ -1955,7 +1965,7 @@ export default function EditorWithImages() {
                                 type="range"
                                 min="1"
                                 max="10"
-                                value={textStyles[selectedBlock.style].outlineWidth || 2}
+                                value={textStyles[selectedBlock.style]?.outlineWidth || 2}
                                 onChange={(e) => {
                                   const newStyles = { ...textStyles };
                                   newStyles[selectedBlock.style] = {
