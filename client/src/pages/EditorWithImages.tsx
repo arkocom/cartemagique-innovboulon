@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import ThemeSelectorComplete from '@/components/ThemeSelectorComplete';
-import { Trash2, Plus, Upload, RotateCw, ZoomIn, ZoomOut, AlignLeft, AlignCenter, AlignRight, Wand2, Undo, Redo, Smartphone, Monitor, Type } from 'lucide-react';
+import { Trash2, Plus, Upload, RotateCw, ZoomIn, ZoomOut, AlignLeft, AlignCenter, AlignRight, Wand2, Undo, Redo, Smartphone, Monitor, Type, LayoutGrid } from 'lucide-react';
 
 type TextStyle = 'classic' | 'modern' | 'elegant' | 'festive' | string;
 
@@ -180,6 +180,96 @@ export default function EditorWithImages() {
     reader.readAsDataURL(file);
   };
 
+  // Smart Collage Layouts
+  const applyCollageLayout = (count: number) => {
+    // Filter only images (not stickers) - assuming stickers have small initial size or specific IDs
+    // For now, we'll just re-arrange all current images
+    // In a real app, we might want to distinguish between "photos" and "stickers"
+    
+    const canvasWidth = aspectRatio === 'story' ? 338 : 400;
+    const canvasHeight = 600;
+    const padding = 20;
+    const availableWidth = canvasWidth - (padding * 2);
+    const availableHeight = canvasHeight - (padding * 2);
+    
+    // Create new image elements based on current ones but with new positions/sizes
+    const newImages = [...imageElements];
+    
+    if (newImages.length === 0) return;
+    
+    // If we have more images than the requested layout, we only arrange the first N
+    // Or we arrange all of them in a grid
+    const imagesToArrange = newImages.slice(0, Math.max(count, newImages.length));
+    const layoutCount = imagesToArrange.length;
+    
+    if (layoutCount === 1) {
+      // Single image centered
+      imagesToArrange[0].x = canvasWidth / 2 - 150;
+      imagesToArrange[0].y = canvasHeight / 2 - 150;
+      imagesToArrange[0].width = 300;
+      imagesToArrange[0].height = 300;
+      imagesToArrange[0].rotation = 0;
+    } else if (layoutCount === 2) {
+      // Two images vertical split
+      const imgHeight = (availableHeight - padding) / 2;
+      
+      imagesToArrange[0].x = padding;
+      imagesToArrange[0].y = padding;
+      imagesToArrange[0].width = availableWidth;
+      imagesToArrange[0].height = imgHeight;
+      imagesToArrange[0].rotation = 0;
+      
+      imagesToArrange[1].x = padding;
+      imagesToArrange[1].y = padding + imgHeight + padding;
+      imagesToArrange[1].width = availableWidth;
+      imagesToArrange[1].height = imgHeight;
+      imagesToArrange[1].rotation = 0;
+    } else if (layoutCount === 3) {
+      // One top, two bottom
+      const topHeight = (availableHeight - padding) * 0.6;
+      const bottomHeight = (availableHeight - padding) * 0.4;
+      const bottomWidth = (availableWidth - padding) / 2;
+      
+      imagesToArrange[0].x = padding;
+      imagesToArrange[0].y = padding;
+      imagesToArrange[0].width = availableWidth;
+      imagesToArrange[0].height = topHeight;
+      imagesToArrange[0].rotation = 0;
+      
+      imagesToArrange[1].x = padding;
+      imagesToArrange[1].y = padding + topHeight + padding;
+      imagesToArrange[1].width = bottomWidth;
+      imagesToArrange[1].height = bottomHeight;
+      imagesToArrange[1].rotation = 0;
+      
+      imagesToArrange[2].x = padding + bottomWidth + padding;
+      imagesToArrange[2].y = padding + topHeight + padding;
+      imagesToArrange[2].width = bottomWidth;
+      imagesToArrange[2].height = bottomHeight;
+      imagesToArrange[2].rotation = 0;
+    } else if (layoutCount >= 4) {
+      // 2x2 Grid
+      const imgWidth = (availableWidth - padding) / 2;
+      const imgHeight = (availableHeight - padding) / 2;
+      
+      imagesToArrange.forEach((img, index) => {
+        const row = Math.floor(index / 2);
+        const col = index % 2;
+        
+        if (row < 2) { // Only handle first 4 for 2x2 grid properly, others will stack
+          img.x = padding + (col * (imgWidth + padding));
+          img.y = padding + (row * (imgHeight + padding));
+          img.width = imgWidth;
+          img.height = imgHeight;
+          img.rotation = 0;
+        }
+      });
+    }
+    
+    setImageElements(newImages);
+    addToHistory();
+  };
+
   // History state
   const [history, setHistory] = useState<{textBlocks: TextBlock[], imageElements: ImageElement[]}[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
@@ -348,8 +438,12 @@ export default function EditorWithImages() {
   };
 
   const STICKERS = [
-    '🎅', '🎄', '🎁', '⭐', '❄️', '⛄', '🦌', '🔔', 
-    '🕯️', '🍪', '🥛', '🎉', '🥂', '🎆', '❤️', '✨'
+    // Noël
+    '🎅', '🎄', '🎁', '⭐', '❄️', '⛄', '🦌', '🔔', '🕯️', '🍪', '🥛',
+    // Nouvel An / Fête
+    '🎉', '🥂', '🎆', '🎇', '🎊', '🎈', '🎭', '🎩', '👑', '🕰️',
+    // Amour / Divers
+    '❤️', '✨', '💖', '💌', '🍀', '🕊️', '🎶', '📷'
   ];
   
   const selectedThemeId = useAppStore((state) => state.selectedThemeId);
@@ -1356,20 +1450,64 @@ export default function EditorWithImages() {
                         <Upload className="w-4 h-4 mr-2" />
                         Photo perso
                       </Button>
-                      <Button
-                        onClick={() => {
-                          // Trigger file input but set a flag or use a different handler for collage
-                          // For now, we reuse the same input but maybe we can add a specific collage mode later
-                          // The current implementation already supports adding multiple images which acts as a collage
-                          fileInputRef.current?.click();
-                        }}
-                        size="lg"
-                        variant="outline"
-                        className="w-full border-blue-600 text-blue-400 hover:bg-blue-900/20 text-base md:text-sm md:py-2 py-3"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Collage
-                      </Button>
+                      <div className="relative group">
+                        <Button
+                          size="lg"
+                          variant="outline"
+                          className="w-full border-blue-600 text-blue-400 hover:bg-blue-900/20 text-base md:text-sm md:py-2 py-3"
+                        >
+                          <LayoutGrid className="w-4 h-4 mr-2" />
+                          Collage
+                        </Button>
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-2 z-10 hidden group-hover:block hover:block">
+                          <div className="grid grid-cols-3 gap-2">
+                            <button 
+                              onClick={() => applyCollageLayout(1)}
+                              className="p-2 hover:bg-gray-700 rounded flex flex-col items-center"
+                              title="1 Photo"
+                            >
+                              <div className="w-6 h-6 border-2 border-gray-400 rounded-sm"></div>
+                              <span className="text-xs mt-1">1</span>
+                            </button>
+                            <button 
+                              onClick={() => applyCollageLayout(2)}
+                              className="p-2 hover:bg-gray-700 rounded flex flex-col items-center"
+                              title="2 Photos"
+                            >
+                              <div className="w-6 h-6 border-2 border-gray-400 rounded-sm flex flex-col">
+                                <div className="h-1/2 border-b border-gray-400"></div>
+                              </div>
+                              <span className="text-xs mt-1">2</span>
+                            </button>
+                            <button 
+                              onClick={() => applyCollageLayout(3)}
+                              className="p-2 hover:bg-gray-700 rounded flex flex-col items-center"
+                              title="3 Photos"
+                            >
+                              <div className="w-6 h-6 border-2 border-gray-400 rounded-sm flex flex-col">
+                                <div className="h-1/2 border-b border-gray-400"></div>
+                                <div className="h-1/2 flex">
+                                  <div className="w-1/2 border-r border-gray-400"></div>
+                                </div>
+                              </div>
+                              <span className="text-xs mt-1">3</span>
+                            </button>
+                            <button 
+                              onClick={() => applyCollageLayout(4)}
+                              className="p-2 hover:bg-gray-700 rounded flex flex-col items-center"
+                              title="4 Photos"
+                            >
+                              <div className="w-6 h-6 border-2 border-gray-400 rounded-sm grid grid-cols-2 grid-rows-2">
+                                <div className="border-r border-b border-gray-400"></div>
+                                <div className="border-b border-gray-400"></div>
+                                <div className="border-r border-gray-400"></div>
+                                <div></div>
+                              </div>
+                              <span className="text-xs mt-1">4</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                     <input
                       ref={fileInputRef}
