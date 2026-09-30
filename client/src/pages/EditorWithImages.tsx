@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Link } from 'wouter';
 import { useAppStore } from '@/stores/appStore';
-import { themes } from '@/lib/themes';
+import { themes, galleryThemes } from '@/lib/themes';
 import { STARTER_TEMPLATES, CardTemplate } from '@/lib/templates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1325,7 +1325,7 @@ export default function EditorWithImages() {
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold mb-2">Choisissez votre fond</h2>
               <p className="text-gray-400 max-w-2xl mx-auto">
-                63 modèles festifs pour célébrer la fin d'année.
+                {galleryThemes.length} modèles pour vos fêtes et vos messages.
               </p>
             </div>
 
