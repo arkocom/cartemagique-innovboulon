@@ -10,6 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import ThemeSelectorComplete from '@/components/ThemeSelectorComplete';
 import TextAssistantDialog from '@/components/TextAssistantDialog';
 import { Trash2, Plus, Upload, RotateCw, ZoomIn, ZoomOut, AlignLeft, AlignCenter, AlignRight, Wand2, Undo, Redo, Smartphone, Monitor, Type, LayoutGrid, ImagePlus, SlidersHorizontal, Send, X } from 'lucide-react';
+import { getCardCanvasSize, renderCardToCanvas, type CardCanvasTextStyle } from '@/lib/cardCanvas';
 
 type TextStyle = 'classic' | 'modern' | 'elegant' | 'festive' | string;
 
@@ -137,7 +138,7 @@ export default function EditorWithImages() {
   const fontInputRef = useRef<HTMLInputElement>(null);
   const [customFonts, setCustomFonts] = useState<string[]>([]);
   const [showMagicDust, setShowMagicDust] = useState(false);
-  const [textStyles, setTextStyles] = useState<Record<string, any>>(INITIAL_TEXT_STYLES);
+  const [textStyles, setTextStyles] = useState<Record<string, CardCanvasTextStyle>>(INITIAL_TEXT_STYLES);
   const [backgroundColor, setBackgroundColor] = useState<string>(''); // Empty string means use image
   const [showCollageMenu, setShowCollageMenu] = useState(false);
   const [collageNotice, setCollageNotice] = useState('Ajoutez une ou plusieurs photos, puis choisissez une disposition.');
@@ -518,98 +519,21 @@ export default function EditorWithImages() {
 
   const drawCard = useCallback(async () => {
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!canvas || !ctx || !showCanvas) return;
+    if (!canvas || !showCanvas) return;
 
     const renderVersion = ++renderVersionRef.current;
-    const canvasWidth = aspectRatio === 'story' ? 338 : 400;
 
     try {
-      const [background, ...loadedElements] = await Promise.all([
-        backgroundColor ? Promise.resolve(null) : loadCanvasImage(selectedTheme.image),
-        ...imageElements.map((element) => loadCanvasImage(element.src).catch(() => null)),
-      ]);
-
-      // Ignore un rendu devenu obsolète pendant le chargement des images.
-      if (renderVersion !== renderVersionRef.current) return;
-
-      ctx.clearRect(0, 0, canvasWidth, 600);
-      if (backgroundColor) {
-        ctx.fillStyle = backgroundColor;
-        ctx.fillRect(0, 0, canvasWidth, 600);
-      } else if (background) {
-        const scale = Math.max(canvasWidth / background.width, 600 / background.height);
-        const x = canvasWidth / 2 - (background.width * scale) / 2;
-        const y = 300 - (background.height * scale) / 2;
-        ctx.drawImage(background, x, y, background.width * scale, background.height * scale);
-      }
-
-      // Le cadre est peint avant les éléments : le texte reste toujours lisible au premier plan.
-      if (showFrame && frameWidth > 0) {
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, frameWidth, 600);
-        ctx.fillRect(canvasWidth - frameWidth, 0, frameWidth, 600);
-        ctx.fillRect(0, 0, canvasWidth, frameWidth);
-        ctx.fillRect(0, 600 - frameWidth, canvasWidth, frameWidth);
-      }
-
-      imageElements.forEach((element, index) => {
-        const image = loadedElements[index];
-        if (!image) return;
-        ctx.save();
-        ctx.translate(element.x + element.width / 2, element.y + element.height / 2);
-        ctx.rotate((element.rotation * Math.PI) / 180);
-
-        if (element.filter === 'grayscale') ctx.filter = 'grayscale(100%)';
-        if (element.filter === 'sepia') ctx.filter = 'sepia(100%)';
-        if (element.filter === 'vintage') ctx.filter = 'sepia(50%) contrast(120%) brightness(90%)';
-
-        if (element.tint && element.tint !== 'original') {
-          const tintCanvas = document.createElement('canvas');
-          tintCanvas.width = image.width;
-          tintCanvas.height = image.height;
-          const tintContext = tintCanvas.getContext('2d');
-          if (tintContext) {
-            tintContext.drawImage(image, 0, 0);
-            tintContext.globalCompositeOperation = 'source-in';
-            tintContext.fillStyle = element.tint;
-            tintContext.fillRect(0, 0, tintCanvas.width, tintCanvas.height);
-            ctx.drawImage(tintCanvas, -element.width / 2, -element.height / 2, element.width, element.height);
-          }
-        } else {
-          ctx.drawImage(image, -element.width / 2, -element.height / 2, element.width, element.height);
-        }
-        ctx.restore();
-      });
-
-      textBlocks.forEach((block) => {
-        const style = textStyles[block.style] ?? INITIAL_TEXT_STYLES.modern;
-        ctx.save();
-        ctx.font = `bold ${block.fontSize}px ${style.fontFamily}`;
-        ctx.fillStyle = block.color;
-        ctx.textAlign = block.align || 'center';
-        ctx.textBaseline = 'middle';
-        ctx.shadowColor = style.shadowColor;
-        ctx.shadowBlur = style.shadowBlur;
-        ctx.shadowOffsetX = 2;
-        ctx.shadowOffsetY = 2;
-
-        const lines = block.text.split('\n');
-        const lineHeight = block.fontSize * 1.2;
-        const startY = block.y - (lines.length * lineHeight) / 2 + lineHeight / 2;
-        lines.forEach((line, index) => {
-          const lineY = startY + index * lineHeight;
-          if (style.outline) {
-            ctx.strokeStyle = style.outlineColor || '#000000';
-            ctx.lineWidth = style.outlineWidth || 2;
-            ctx.lineJoin = 'round';
-            ctx.miterLimit = 2;
-            ctx.strokeText(line, block.x, lineY);
-          }
-          ctx.fillText(line, block.x, lineY);
-        });
-        ctx.restore();
-      });
+      await renderCardToCanvas(canvas, {
+        aspectRatio,
+        backgroundColor,
+        backgroundImage: selectedTheme.image,
+        imageElements,
+        textBlocks,
+        textStyles,
+        showFrame,
+        frameWidth,
+      }, loadCanvasImage, () => renderVersion === renderVersionRef.current);
     } catch (error) {
       console.warn('Rendu de carte incomplet :', error);
     }
@@ -980,22 +904,37 @@ export default function EditorWithImages() {
     setShowTextAssistant(false);
   };
 
-  const handleExport = async () => {
-    const canvas = canvasRef.current;
-    if (!canvas) {
-      alert('Le visuel est encore en cours de préparation. Réessayez dans un instant.');
-      return;
-    }
+  const createExportBlob = async () => {
+    const { width, height } = getCardCanvasSize(aspectRatio);
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = width;
+    exportCanvas.height = height;
 
+    const rendered = await renderCardToCanvas(exportCanvas, {
+      aspectRatio,
+      backgroundColor,
+      backgroundImage: selectedTheme.image,
+      imageElements,
+      textBlocks,
+      textStyles,
+      showFrame,
+      frameWidth,
+    }, loadCanvasImage);
+    if (!rendered) throw new Error('Le rendu de la carte a été interrompu.');
+
+    return new Promise<Blob>((resolve, reject) => {
+      exportCanvas.toBlob(
+        (blob) => blob ? resolve(blob) : reject(new Error('PNG indisponible')),
+        'image/png',
+        1.0,
+      );
+    });
+  };
+
+  const handleExport = async () => {
     setIsExporting(true);
     try {
-      // Attend le rendu actuel au lieu de dépendre d’un délai arbitraire.
-      await drawCard();
-      const renderedCanvas = canvasRef.current;
-      if (!renderedCanvas) throw new Error('Canvas introuvable');
-      const blob = await new Promise<Blob>((resolve, reject) => {
-        renderedCanvas.toBlob((value) => value ? resolve(value) : reject(new Error('PNG indisponible')), 'image/png', 1.0);
-      });
+      const blob = await createExportBlob();
 
       if (previewUrl.startsWith('blob:')) URL.revokeObjectURL(previewUrl);
       setPreviewUrl(URL.createObjectURL(blob));
@@ -1095,6 +1034,51 @@ export default function EditorWithImages() {
     } catch (error) {
       console.error('Erreur globale lors du partage:', error);
       setShowSaveModal(true);
+    }
+  };
+
+  const handleWhatsAppShare = async () => {
+    if (isExporting) return;
+
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent("Regarde la carte que j'ai créée avec CarteMagique ! ✨")}`;
+    const sampleFile = new File([], 'carte-magique.png', { type: 'image/png' });
+    const canShareFiles = Boolean(
+      typeof navigator.share === 'function' &&
+      typeof navigator.canShare === 'function' &&
+      navigator.canShare({ files: [sampleFile] }),
+    );
+
+    // Open the external page directly in the click handler so popup blockers do not
+    // discard it while the card's images are loading.
+    if (!canShareFiles) window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+
+    setIsExporting(true);
+    try {
+      const blob = await createExportBlob();
+      const file = new File([blob], `carte-magique-${Date.now()}.png`, { type: 'image/png' });
+
+      if (canShareFiles && navigator.share) {
+        await navigator.share({
+          files: [file],
+          title: 'Ma Carte Magique',
+          text: "Regarde la carte que j'ai créée ! ✨",
+        });
+        return;
+      }
+
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = file.name;
+      link.href = blobUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+    } catch (error) {
+      console.error('Erreur lors du partage WhatsApp :', error);
+      alert('Impossible de préparer le PNG. Réessayez dans un instant.');
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -2052,58 +2036,7 @@ export default function EditorWithImages() {
                 {isExporting ? '⏳ Préparation...' : '📥 Télécharger'}
               </Button>
               <Button
-                onClick={() => {
-                  if (isExporting) return;
-                  setIsExporting(true);
-                  // Wait for canvas to be ready
-                  setTimeout(() => {
-                    const canvas = canvasRef.current;
-                    if (!canvas) {
-                      setIsExporting(false);
-                      return;
-                    }
-                    
-                    // Convert canvas to blob
-                    canvas.toBlob((blob) => {
-                      if (!blob) {
-                        setIsExporting(false);
-                        return;
-                      }
-                      
-                      // Create a file from the blob
-                      const file = new File([blob], "carte-magique.png", { type: "image/png" });
-                      
-                      // Check if Web Share API is supported and can share files
-                      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                        navigator.share({
-                          files: [file],
-                          title: 'Ma Carte Magique',
-                          text: 'Regarde la carte que j\'ai créée ! ✨'
-                        })
-                        .then(() => setIsExporting(false))
-                        .catch((error) => {
-                          console.error('Error sharing:', error);
-                          setIsExporting(false);
-                        });
-                      } else {
-                        // Fallback for WhatsApp Web or unsupported browsers
-                        // We can't directly share image to WhatsApp Web via URL scheme, 
-                        // so we just open WhatsApp with text and let user attach image manually
-                        // or show a toast saying "Image téléchargée, ouvrez WhatsApp pour l'envoyer"
-                        
-                        // Download image first
-                        const link = document.createElement('a');
-                        link.download = `carte-magique-${Date.now()}.png`;
-                        link.href = canvas.toDataURL('image/png');
-                        link.click();
-                        
-                        // Open WhatsApp
-                        window.open(`https://wa.me/?text=${encodeURIComponent("Regarde la carte que j'ai créée avec CarteMagique ! ✨")}`, '_blank');
-                        setIsExporting(false);
-                      }
-                    }, 'image/png');
-                  }, 100);
-                }}
+                onClick={handleWhatsAppShare}
                 disabled={isExporting}
                 size="lg"
                 className="px-6 md:px-8 py-3 md:py-4 text-base md:text-base bg-[#25D366] hover:bg-[#128C7E] text-white border-none"
