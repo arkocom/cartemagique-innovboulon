@@ -49,6 +49,23 @@ export interface CardCanvasRenderOptions {
 
 export type CanvasImageLoader = (src: string) => Promise<HTMLImageElement>;
 
+export type CardCanvasAssetType = 'background' | 'photo';
+
+export class CardCanvasAssetError extends Error {
+  readonly assetType: CardCanvasAssetType;
+  readonly assetIndex?: number;
+
+  constructor(assetType: CardCanvasAssetType, assetIndex?: number) {
+    const message = assetType === 'background'
+      ? 'Impossible de charger le fond de la carte. Vérifiez la connexion ou choisissez un autre fond avant l’export.'
+      : `Impossible de charger la photo n°${assetIndex ?? 1}. Vérifiez la connexion ou retirez-la avant l’export.`;
+    super(message);
+    this.name = 'CardCanvasAssetError';
+    this.assetType = assetType;
+    this.assetIndex = assetIndex;
+  }
+}
+
 const DEFAULT_TEXT_STYLE: CardCanvasTextStyle = {
   name: 'Moderne',
   fontFamily: 'Arial, sans-serif',
@@ -136,6 +153,63 @@ function clampTextAnchorX(
   );
 }
 
+export function isPointInsideCardTextBlock(
+  context: CanvasRenderingContext2D,
+  block: CardCanvasTextBlock,
+  style: CardCanvasTextStyle,
+  x: number,
+  y: number,
+  canvasWidth: number,
+  showFrame: boolean,
+  frameWidth: number,
+): boolean {
+  context.font = `bold ${block.fontSize}px ${style.fontFamily}`;
+  const inset = Math.max(TEXT_SAFE_MARGIN, showFrame ? frameWidth + 8 : TEXT_SAFE_MARGIN);
+  const maxTextWidth = Math.max(40, canvasWidth - inset * 2);
+  const lines = wrapTextToWidth(context, block.text, maxTextWidth);
+  const widestLine = Math.min(
+    maxTextWidth,
+    Math.max(0, ...lines.map((line) => context.measureText(line).width)),
+  );
+  const align = block.align || 'center';
+  const anchorX = clampTextAnchorX(align, block.x, widestLine, canvasWidth, inset);
+  const left = align === 'left'
+    ? anchorX
+    : align === 'right'
+      ? anchorX - widestLine
+      : anchorX - widestLine / 2;
+  const lineHeight = block.fontSize * 1.2;
+  const totalHeight = lines.length * lineHeight;
+  const padding = Math.max(
+    6,
+    style.outline ? (style.outlineWidth || 0) / 2 : 0,
+    Math.min(style.shadowBlur || 0, 16),
+  );
+
+  return (
+    x >= left - padding &&
+    x <= left + widestLine + padding &&
+    y >= block.y - totalHeight / 2 - padding &&
+    y <= block.y + totalHeight / 2 + padding
+  );
+}
+
+async function loadRequiredCanvasImage(
+  src: string,
+  loadImage: CanvasImageLoader,
+  assetType: CardCanvasAssetType,
+  assetIndex?: number,
+): Promise<HTMLImageElement> {
+  try {
+    if (!src) throw new Error('Image source is empty');
+    const image = await loadImage(src);
+    if (!(image.width > 0) || !(image.height > 0)) throw new Error('Image has no dimensions');
+    return image;
+  } catch {
+    throw new CardCanvasAssetError(assetType, assetIndex);
+  }
+}
+
 /**
  * Draws one immutable editor snapshot to the provided canvas. Returning false
  * means a newer preview render superseded this one before any pixels were drawn.
@@ -150,11 +224,14 @@ export async function renderCardToCanvas(
   if (!context) throw new Error('Le contexte graphique 2D est indisponible.');
 
   const { width, height } = getCardCanvasSize(options.aspectRatio);
+  const backgroundPromise = options.backgroundColor
+    ? Promise.resolve(null)
+    : loadRequiredCanvasImage(options.backgroundImage, loadImage, 'background');
   const [background, ...loadedElements] = await Promise.all([
-    options.backgroundColor || !options.backgroundImage
-      ? Promise.resolve(null)
-      : loadImage(options.backgroundImage).catch(() => null),
-    ...options.imageElements.map((element) => loadImage(element.src).catch(() => null)),
+    backgroundPromise,
+    ...options.imageElements.map((element, index) =>
+      loadRequiredCanvasImage(element.src, loadImage, 'photo', index + 1),
+    ),
   ]);
 
   if (!isCurrent()) return false;

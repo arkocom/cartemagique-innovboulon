@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   getCardCanvasSize,
+  isPointInsideCardTextBlock,
   renderCardToCanvas,
   type CardCanvasRenderOptions,
 } from './cardCanvas';
@@ -59,6 +60,26 @@ describe('card canvas rendering', () => {
   it('uses the expected dimensions for card and story formats', () => {
     expect(getCardCanvasSize('standard')).toEqual({ width: 400, height: 600 });
     expect(getCardCanvasSize('story')).toEqual({ width: 338, height: 600 });
+  });
+
+  it('rejects a missing background or photo before painting an incomplete card', async () => {
+    const photoCanvas = createMockCanvas();
+    await expect(renderCardToCanvas(
+      photoCanvas.canvas,
+      createOptions({
+        imageElements: [{ src: '/missing-photo.png', x: 10, y: 10, width: 100, height: 100, rotation: 0 }],
+      }),
+      () => Promise.reject(new Error('network error')),
+    )).rejects.toMatchObject({ name: 'CardCanvasAssetError', assetType: 'photo', assetIndex: 1 });
+    expect(photoCanvas.operations).toEqual([]);
+
+    const backgroundCanvas = createMockCanvas();
+    await expect(renderCardToCanvas(
+      backgroundCanvas.canvas,
+      createOptions({ backgroundColor: '', backgroundImage: '/missing-background.webp' }),
+      () => Promise.reject(new Error('network error')),
+    )).rejects.toMatchObject({ name: 'CardCanvasAssetError', assetType: 'background' });
+    expect(backgroundCanvas.operations).toEqual([]);
   });
 
   it('waits for photo assets before painting and keeps the frame above photos but text above the frame', async () => {
@@ -144,6 +165,23 @@ describe('card canvas rendering', () => {
       expect(x - halfWidth).toBeGreaterThanOrEqual(16);
       expect(x + halfWidth).toBeLessThanOrEqual(338 - 16);
     }
+  });
+
+  it('hits the lower line of a wrapped Story text block', () => {
+    const { context } = createMockCanvas();
+    const style = createOptions().textStyles.modern;
+    const block = {
+      text: 'Joyeux\nNoël',
+      x: 169,
+      y: 300,
+      color: '#ffffff',
+      fontSize: 24,
+      style: 'modern',
+      align: 'center' as const,
+    };
+
+    expect(isPointInsideCardTextBlock(context as unknown as CanvasRenderingContext2D, block, style, 169, 321, 338, false, 0)).toBe(true);
+    expect(isPointInsideCardTextBlock(context as unknown as CanvasRenderingContext2D, block, style, 169, 360, 338, false, 0)).toBe(false);
   });
 
 });

@@ -10,7 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import ThemeSelectorComplete from '@/components/ThemeSelectorComplete';
 import TextAssistantDialog from '@/components/TextAssistantDialog';
 import { Trash2, Plus, Upload, RotateCw, ZoomIn, ZoomOut, AlignLeft, AlignCenter, AlignRight, Wand2, Undo, Redo, Smartphone, Monitor, Type, LayoutGrid, ImagePlus, SlidersHorizontal, Send, X } from 'lucide-react';
-import { getCardCanvasSize, renderCardToCanvas, type CardCanvasTextStyle } from '@/lib/cardCanvas';
+import { CardCanvasAssetError, getCardCanvasSize, isPointInsideCardTextBlock, renderCardToCanvas, type CardCanvasTextStyle } from '@/lib/cardCanvas';
 import { isShareAbortError } from '@/lib/shareUtils';
 
 type TextStyle = 'classic' | 'modern' | 'elegant' | 'festive' | string;
@@ -122,6 +122,7 @@ export default function EditorWithImages() {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isExporting, setIsExporting] = useState(false);
+  const [renderError, setRenderError] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
@@ -525,7 +526,7 @@ export default function EditorWithImages() {
     const renderVersion = ++renderVersionRef.current;
 
     try {
-      await renderCardToCanvas(canvas, {
+      const rendered = await renderCardToCanvas(canvas, {
         aspectRatio,
         backgroundColor,
         backgroundImage: selectedTheme.image,
@@ -535,7 +536,12 @@ export default function EditorWithImages() {
         showFrame,
         frameWidth,
       }, loadCanvasImage, () => renderVersion === renderVersionRef.current);
+      if (rendered && renderVersion === renderVersionRef.current) setRenderError(null);
     } catch (error) {
+      if (renderVersion === renderVersionRef.current) {
+        canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
+        setRenderError(error instanceof Error ? error.message : 'Le rendu de la carte a échoué.');
+      }
       console.warn('Rendu de carte incomplet :', error);
     }
   }, [aspectRatio, backgroundColor, frameWidth, imageElements, loadCanvasImage, selectedTheme.image, showCanvas, showFrame, textBlocks, textStyles]);
@@ -583,18 +589,9 @@ export default function EditorWithImages() {
 
     for (let i = textBlocks.length - 1; i >= 0; i--) {
       const block = textBlocks[i];
-      const style = textStyles[block.style];
-      ctx.font = `bold ${block.fontSize}px ${style.fontFamily}`;
-      const metrics = ctx.measureText(block.text);
-      const textWidth = metrics.width;
-      const textHeight = block.fontSize;
+      const style = textStyles[block.style] ?? textStyles.modern;
 
-      if (
-        x >= block.x - textWidth / 2 &&
-        x <= block.x + textWidth / 2 &&
-        y >= block.y - textHeight / 2 &&
-        y <= block.y + textHeight / 2
-      ) {
+      if (isPointInsideCardTextBlock(ctx, block, style, x, y, canvasWidth, showFrame, frameWidth)) {
         setSelectedBlockId(block.id);
         setSelectedImageId(null);
         setIsDragging(true);
@@ -671,18 +668,9 @@ export default function EditorWithImages() {
 
     for (let i = textBlocks.length - 1; i >= 0; i--) {
       const block = textBlocks[i];
-      const style = textStyles[block.style];
-      ctx.font = `bold ${block.fontSize}px ${style.fontFamily}`;
-      const metrics = ctx.measureText(block.text);
-      const textWidth = metrics.width;
-      const textHeight = block.fontSize;
+      const style = textStyles[block.style] ?? textStyles.modern;
 
-      if (
-        x >= block.x - textWidth / 2 &&
-        x <= block.x + textWidth / 2 &&
-        y >= block.y - textHeight / 2 &&
-        y <= block.y + textHeight / 2
-      ) {
+      if (isPointInsideCardTextBlock(ctx, block, style, x, y, canvasWidth, showFrame, frameWidth)) {
         setSelectedBlockId(block.id);
         setSelectedImageId(null);
         setIsDragging(true);
@@ -943,7 +931,10 @@ export default function EditorWithImages() {
       setShowPreview(true);
     } catch (error) {
       console.error('Erreur lors de l’export :', error);
-      alert('Impossible de générer l’image. Réessayez dans un instant.');
+      if (error instanceof CardCanvasAssetError) setRenderError(error.message);
+      alert(error instanceof CardCanvasAssetError
+        ? error.message
+        : 'Impossible de générer le PNG. Réessayez dans un instant.');
     } finally {
       setIsExporting(false);
     }
@@ -1087,6 +1078,12 @@ export default function EditorWithImages() {
     } catch (error) {
       if (isShareAbortError(error)) {
         console.info('Partage annulé par l’utilisateur.');
+        return;
+      }
+
+      if (error instanceof CardCanvasAssetError) {
+        setRenderError(error.message);
+        alert(error.message);
         return;
       }
 
@@ -1328,7 +1325,7 @@ export default function EditorWithImages() {
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold mb-2">Choisissez votre fond</h2>
               <p className="text-gray-400 max-w-2xl mx-auto">
-                30 modèles festifs pour célébrer la fin d'année.
+                63 modèles festifs pour célébrer la fin d'année.
               </p>
             </div>
 
@@ -1406,6 +1403,12 @@ export default function EditorWithImages() {
               />
                     </div>
                   </div>
+                  {renderError && (
+                    <div role="alert" aria-live="assertive" className="mx-auto mt-3 max-w-xl rounded-lg border border-red-500/50 bg-red-950/70 p-3 text-sm text-red-100">
+                      <p className="font-semibold">Aperçu incomplet — l’export PNG est bloqué.</p>
+                      <p className="mt-1">{renderError}</p>
+                    </div>
+                  )}
                   <p className="text-sm text-gray-400 text-center mt-2">
                     💡 Cliquez/touchez et faites glisser pour déplacer les éléments
                   </p>
