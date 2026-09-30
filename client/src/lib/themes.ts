@@ -27,7 +27,7 @@ const createTheme = (
 
 export const themes: ThemeWithPreview[] = [
   // ❄️ Hiver (10)
-  createTheme('hiver-1', 'Hiver 1', 'Paysage neigeux', '/manus-storage/hiver-1_35ac4b21.jpg', '/manus-storage/hiver-1-preview_6db384d6.jpg'),
+  createTheme('hiver-1', 'Hiver 1', 'Paysage neigeux', '/backgrounds/hiver.webp', '/backgrounds/hiver.webp'),
   createTheme('hiver-2', 'Hiver 2', 'Forêt enneigée', '/manus-storage/hiver-2_1d2b2cd2.jpg', '/manus-storage/hiver-2-preview_83c74d8c.jpg'),
   createTheme('hiver-3', 'Hiver 3', 'Lac gelé', '/manus-storage/hiver-3_432cf9f6.jpg', '/manus-storage/hiver-3-preview_78ec2691.jpg'),
   createTheme('hiver-4', 'Hiver 4', 'Montagnes', '/manus-storage/hiver-4_e47bde5a.jpg', '/manus-storage/hiver-4-preview_6da8e917.jpg'),
@@ -39,7 +39,7 @@ export const themes: ThemeWithPreview[] = [
   createTheme('hiver-10', 'Hiver 10', 'Ciel étoilé', '/manus-storage/hiver-10_1ee0e429.jpg', '/manus-storage/hiver-10-preview_78fc6827.jpg'),
 
   // 🎄 Noël (10)
-  createTheme('noel-1', 'Noël 1', 'Sapin lumineux', '/manus-storage/noel-1_2d9dcc82.jpg', '/manus-storage/noel-1-preview_8e8820d4.jpg'),
+  createTheme('noel-1', 'Noël 1', 'Sapin lumineux', '/backgrounds/hiver.webp', '/backgrounds/hiver.webp'),
   createTheme('noel-2', 'Noël 2', 'Décor doré', '/manus-storage/noel-2_8d13b478.jpg', '/manus-storage/noel-2-preview_55c2c30b.jpg'),
   createTheme('noel-3', 'Noël 3', 'Cadeaux', '/manus-storage/noel-3_fa6b1866.jpg', '/manus-storage/noel-3-preview_78003c8a.jpg'),
   createTheme('noel-4', 'Noël 4', 'Guirlandes', '/manus-storage/noel-4_78f48680.jpg', '/manus-storage/noel-4-preview_6462ca5c.jpg'),
@@ -51,7 +51,7 @@ export const themes: ThemeWithPreview[] = [
   createTheme('noel-10', 'Noël 10', 'Magie', '/manus-storage/noel-10_97971781.jpg', '/manus-storage/noel-10-preview_1a8cb8f1.jpg'),
 
   // 🥂 Nouvel An (10)
-  createTheme('nouvel-an-1', 'Nouvel An 1', 'Feux d\'artifice', '/manus-storage/nouvel-an-1_1423406a.jpg', '/manus-storage/nouvel-an-1-preview_2699f661.jpg'),
+  createTheme('nouvel-an-1', 'Nouvel An 1', 'Feux d\'artifice', '/backgrounds/celebration.webp', '/backgrounds/celebration.webp'),
   createTheme('nouvel-an-2', 'Nouvel An 2', 'Champagne', '/manus-storage/nouvel-an-2_ba599db2.jpg', '/manus-storage/nouvel-an-2-preview_0757c821.jpg'),
 
   createTheme('nouvel-an-4', 'Nouvel An 4', 'Élégance dorée', '/manus-storage/nouvel-an-4_8a66d70b.jpg', '/manus-storage/nouvel-an-4-preview_40ae5b8e.jpg'),
@@ -63,7 +63,7 @@ export const themes: ThemeWithPreview[] = [
 
 
   // ✨ Féerie (10)
-  createTheme('feerie-1', 'Féerie 1', 'Lanterne magique', '/manus-storage/feerie-1_bd81310f.jpg', '/manus-storage/feerie-1-preview_0e31c05b.jpg'),
+  createTheme('feerie-1', 'Féerie 1', 'Lanterne magique', '/backgrounds/celeste.webp', '/backgrounds/celeste.webp'),
   createTheme('feerie-2', 'Féerie 2', 'Poussière d\'or', '/manus-storage/feerie-2_721fcf11.jpg', '/manus-storage/feerie-2-preview_150191b1.jpg'),
   createTheme('feerie-3', 'Féerie 3', 'Cristaux de glace', '/manus-storage/feerie-3_efe64a24.jpg', '/manus-storage/feerie-3-preview_79dcac32.jpg'),
   createTheme('feerie-4', 'Féerie 4', 'Aurore boréale', '/manus-storage/feerie-4_1658ec12.jpg', '/manus-storage/feerie-4-preview_a197fd55.jpg'),
@@ -75,21 +75,21 @@ export const themes: ThemeWithPreview[] = [
   createTheme('feerie-10', 'Féerie 10', 'Sculpture de glace', '/manus-storage/feerie-10_605bb6f8.jpg', '/manus-storage/feerie-10-preview_e983551c.jpg'),
 
   // 🌲 Nature (5)
-  createTheme('nature-1', 'Nature 1', 'Pommes de pin', '/manus-storage/nature-1_433eedfe.jpg', '/manus-storage/nature-1-preview_dc74e05c.jpg'),
+  createTheme('nature-1', 'Nature 1', 'Pommes de pin', '/backgrounds/nature.webp', '/backgrounds/nature.webp'),
   createTheme('nature-2', 'Nature 2', 'Flocon macro', '/manus-storage/nature-2_1c8315f3.jpg', '/manus-storage/nature-2-preview_adc44309.jpg'),
   createTheme('nature-3', 'Nature 3', 'Houx rustique', '/manus-storage/nature-3_cc1a0231.jpg', '/manus-storage/nature-3-preview_b5d00c60.jpg'),
   createTheme('nature-4', 'Nature 4', 'Forêt ensoleillée', '/manus-storage/nature-4_ce325d81.jpg', '/manus-storage/nature-4-preview_059aff9c.jpg'),
   createTheme('nature-5', 'Nature 5', 'Cannelle & Orange', '/manus-storage/nature-5_a92493c3.jpg', '/manus-storage/nature-5-preview_76a4804d.jpg'),
 
   // 🥂 Art Déco (5)
-  createTheme('artdeco-1', 'Art Déco 1', 'Lignes or', '/manus-storage/artdeco-1_63b1af42.jpg', '/manus-storage/artdeco-1-preview_79653314.jpg'),
+  createTheme('artdeco-1', 'Art Déco 1', 'Lignes or', '/backgrounds/celebration.webp', '/backgrounds/celebration.webp'),
   createTheme('artdeco-2', 'Art Déco 2', 'Marbre noir', '/manus-storage/artdeco-2_9b8a8423.jpg', '/manus-storage/artdeco-2-preview_970b3bba.jpg'),
   createTheme('artdeco-3', 'Art Déco 3', 'Arches dorées', '/manus-storage/artdeco-3_87237cfc.jpg', '/manus-storage/artdeco-3-preview_bf2f519d.jpg'),
   createTheme('artdeco-4', 'Art Déco 4', 'Bulles champagne', '/manus-storage/artdeco-4_0cba6e85.jpg', '/manus-storage/artdeco-4-preview_430db793.jpg'),
   createTheme('artdeco-5', 'Art Déco 5', 'Émeraude & Or', '/manus-storage/artdeco-5_f9b6a75e.jpg', '/manus-storage/artdeco-5-preview_f806942f.jpg'),
 
   // 💼 Pro (10)
-  createTheme('pro-1', 'Pro 1', 'Cadre Or & Bleu', '/manus-storage/pro-1_48308fa9.jpg', '/manus-storage/pro-1-preview_41e2b8a7.jpg'),
+  createTheme('pro-1', 'Pro 1', 'Cadre Or & Bleu', '/backgrounds/celeste.webp', '/backgrounds/celeste.webp'),
   createTheme('pro-2', 'Pro 2', 'Minimaliste Gris', '/manus-storage/pro-2_220b0a62.jpg', '/manus-storage/pro-2-preview_51140899.jpg'),
   createTheme('pro-3', 'Pro 3', 'Réseau Tech', '/manus-storage/pro-3_09fb4fcc.jpg', '/manus-storage/pro-3-preview_738957cc.jpg'),
   createTheme('pro-4', 'Pro 4', 'Papier Exécutif', '/manus-storage/pro-4_e160d2da.jpg', '/manus-storage/pro-4-preview_6ce8922d.jpg'),
@@ -101,8 +101,8 @@ export const themes: ThemeWithPreview[] = [
   createTheme('pro-10', 'Pro 10', 'Bureau Moderne', '/manus-storage/pro-10_c93f0a99.jpg', '/manus-storage/pro-10-preview_038bad83.jpg'),
 
   // ❤️ Famille (5)
-  createTheme('famille-1', 'Famille 1', 'Scrapbooking', '/manus-storage/famille-1_bf0f8e66.jpg', '/manus-storage/famille-1-preview_84d60d33.jpg'),
-  createTheme('famille-2', 'Famille 2', 'Bois Rustique', '/manus-storage/famille-2_5a42562e.jpg', '/manus-storage/famille-2-preview_5f4ebbf5.jpg'),
+  createTheme('famille-1', 'Famille 1', 'Scrapbooking', '/backgrounds/romance.webp', '/backgrounds/romance.webp'),
+  createTheme('famille-2', 'Famille 2', 'Bois Rustique', '/backgrounds/enfants.webp', '/backgrounds/enfants.webp'),
   createTheme('famille-3', 'Famille 3', 'Album Photo', '/manus-storage/famille-3_f3b90ba5.jpg', '/manus-storage/famille-3-preview_55b98d98.jpg'),
   createTheme('famille-4', 'Famille 4', 'Animaux Mignons', '/manus-storage/famille-4_dd52252f.jpg', '/manus-storage/famille-4-preview_f1609592.jpg'),
   createTheme('famille-5', 'Famille 5', 'Fleurs Douces', '/manus-storage/famille-5_342aa8aa.jpg', '/manus-storage/famille-5-preview_7c7f71f1.jpg'),
