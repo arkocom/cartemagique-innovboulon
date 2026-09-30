@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { themes } from './themes';
+import { themes, galleryThemes } from './themes';
 
 const localThemeAssets: Record<string, string> = {
   'noel-1': 'hiver.webp',
@@ -17,14 +17,25 @@ const localThemeAssets: Record<string, string> = {
 const localFiles = [...new Set(Object.values(localThemeAssets))];
 
 describe('local card background catalogue', () => {
-  it('keeps all 63 existing themes while adding local assets to selected themes', () => {
-    expect(themes).toHaveLength(63);
+  it('preserves existing theme IDs and exposes nineteen working designs', () => {
+    expect(themes).toHaveLength(73);
+    expect(galleryThemes).toHaveLength(19);
+    expect(new Set(themes.map((theme) => theme.id)).size).toBe(themes.length);
 
     for (const [themeId, fileName] of Object.entries(localThemeAssets)) {
       const theme = themes.find((item) => item.id === themeId);
       expect(theme, `theme ${themeId} should remain in the catalogue`).toBeDefined();
       expect(theme?.image).toBe(`/backgrounds/${fileName}`);
       expect(theme?.preview).toBe(`/backgrounds/${fileName}`);
+    }
+  });
+
+  it('uses local image files for every current and legacy theme', () => {
+    for (const theme of themes) {
+      for (const asset of [theme.image, theme.preview]) {
+        expect(asset).toMatch(/^\/backgrounds\/.+\.webp$/);
+        expect(existsSync(new URL(`../../public${asset}`, import.meta.url)), asset).toBe(true);
+      }
     }
   });
 
@@ -35,3 +46,4 @@ describe('local card background catalogue', () => {
     }
   });
 });
+
