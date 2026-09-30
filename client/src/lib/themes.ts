@@ -106,4 +106,74 @@ export const themes: ThemeWithPreview[] = [
   createTheme('famille-3', 'Famille 3', 'Album Photo', '/manus-storage/famille-3_f3b90ba5.jpg', '/manus-storage/famille-3-preview_55b98d98.jpg'),
   createTheme('famille-4', 'Famille 4', 'Animaux Mignons', '/manus-storage/famille-4_dd52252f.jpg', '/manus-storage/famille-4-preview_f1609592.jpg'),
   createTheme('famille-5', 'Famille 5', 'Fleurs Douces', '/manus-storage/famille-5_342aa8aa.jpg', '/manus-storage/famille-5-preview_7c7f71f1.jpg'),
+  createTheme(
+    'famille-anniversaire-corail',
+    'Anniversaire corail',
+    'Ballons nacrés, rubans et étoiles dorées',
+    '/backgrounds/anniversaire-corail.webp',
+    '/backgrounds/previews/anniversaire-corail.webp'
+  ),
+  createTheme(
+    'famille-amour-roses',
+    'Amour en fleurs',
+    'Roses poudrées et petits cœurs',
+    '/backgrounds/amour-roses.webp',
+    '/backgrounds/previews/amour-roses.webp'
+  ),
+  createTheme(
+    'famille-mariage-sauge',
+    'Mariage sauge',
+    'Fleurs blanches, eucalyptus et touches dorées',
+    '/backgrounds/mariage-sauge.webp',
+    '/backgrounds/previews/mariage-sauge.webp'
+  ),
+  createTheme(
+    'nature-merci-prairie',
+    'Merci fleuri',
+    'Marguerites et fleurs de prairie',
+    '/backgrounds/merci-prairie.webp',
+    '/backgrounds/previews/merci-prairie.webp'
+  ),
+  createTheme(
+    'noel-rubis',
+    'Noël rubis et or',
+    'Sapin, velours rouge et lumière chaleureuse',
+    '/backgrounds/noel-rubis.webp',
+    '/backgrounds/previews/noel-rubis.webp'
+  ),
+  createTheme(
+    'nouvel-an-bleu-or',
+    'Minuit doré',
+    'Feux d’artifice dorés sur fond bleu nuit',
+    '/backgrounds/nouvel-an-bleu-or.webp',
+    '/backgrounds/previews/nouvel-an-bleu-or.webp'
+  ),
+  createTheme(
+    'noel-feerique',
+    'Village féerique',
+    'Chalets illuminés et paysage enneigé',
+    '/backgrounds/noel-feerique.webp',
+    '/backgrounds/previews/noel-feerique.webp'
+  ),
+  createTheme(
+    'noel-minimaliste',
+    'Noël minimaliste',
+    'Sapin dessiné, terracotta et étoiles fines',
+    '/backgrounds/noel-minimaliste.webp',
+    '/backgrounds/previews/noel-minimaliste.webp'
+  ),
+  createTheme(
+    'hiver-oiseaux',
+    'Rouges-gorges d’hiver',
+    'Oiseaux et baies rouges à l’aquarelle',
+    '/backgrounds/hiver-oiseaux.webp',
+    '/backgrounds/previews/hiver-oiseaux.webp'
+  ),
+  createTheme(
+    'pro-voeux-champagne',
+    'Vœux champagne',
+    'Rubans champagne et courbes bleu nuit',
+    '/backgrounds/voeux-professionnels.webp',
+    '/backgrounds/previews/voeux-professionnels.webp'
+  ),
 ];
