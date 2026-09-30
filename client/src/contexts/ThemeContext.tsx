@@ -18,19 +18,23 @@ interface ThemeProviderProps {
 
 export function ThemeProvider({
   children,
-  defaultTheme = "light",
-  switchable = false,
+  defaultTheme = "dark",
+  switchable = true,
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(() => {
     if (switchable) {
-      const stored = localStorage.getItem("theme");
-      return (stored as Theme) || defaultTheme;
+      try {
+        const stored = localStorage.getItem("cartemagique-ui-theme");
+        if (stored === "light" || stored === "dark") return stored;
+      } catch { /* Le choix reste disponible sans stockage. */ }
     }
     return defaultTheme;
   });
 
   useEffect(() => {
     const root = document.documentElement;
+    root.dataset.theme = theme;
+    root.style.colorScheme = theme;
     if (theme === "dark") {
       root.classList.add("dark");
     } else {
@@ -38,7 +42,7 @@ export function ThemeProvider({
     }
 
     if (switchable) {
-      localStorage.setItem("theme", theme);
+      try { localStorage.setItem("cartemagique-ui-theme", theme); } catch { /* Stockage indisponible. */ }
     }
   }, [theme, switchable]);
 

@@ -1,4 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import ThemeToggle from '@/components/ThemeToggle';
+import CardMediaControls from '@/components/CardMediaControls';
+import { useTheme } from '@/contexts/ThemeContext';
+import { drawCardEffects, type CardAnimation } from '@/lib/cardEffects';
 import { Link } from 'wouter';
 import { useAppStore } from '@/stores/appStore';
 import { themes, galleryThemes } from '@/lib/themes';
@@ -131,12 +135,12 @@ export default function EditorWithImages() {
   const [showFrame, setShowFrame] = useState(false);
   const [photoFilter, setPhotoFilter] = useState<'none' | 'grayscale' | 'sepia' | 'vintage'>('none');
   const [stickerTint, setStickerTint] = useState<string>('original'); // 'original', '#FFD700', '#FF0000', etc.
-  const [darkMode, setDarkMode] = useState(true);
+  const { theme: uiTheme } = useTheme();
+  const darkMode = uiTheme === 'dark';
+  const [cardAnimation, setCardAnimation] = useState<CardAnimation>('snow');
   const [activeTab, setActiveTab] = useState<'carte' | 'parametres'>('carte');
   const [showTemplates, setShowTemplates] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [aspectRatio, setAspectRatio] = useState<'standard' | 'story'>('standard'); // standard (400x600) or story (338x600 - 9:16 approx)
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const fontInputRef = useRef<HTMLInputElement>(null);
   const [customFonts, setCustomFonts] = useState<string[]>([]);
   const [showMagicDust, setShowMagicDust] = useState(false);
@@ -419,6 +423,7 @@ export default function EditorWithImages() {
   const selectedThemeId = useAppStore((state) => state.selectedThemeId);
   const selectedTheme = themes.find((t) => t.id === selectedThemeId) || themes[0];
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const baseCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageCacheRef = useRef<Map<string, Promise<HTMLImageElement>>>(new Map());
@@ -427,17 +432,7 @@ export default function EditorWithImages() {
 
   useEffect(() => {
     setIsClient(true);
-    // Initialiser l'audio
-    audioRef.current = new Audio('/music/jingle-bells.mp3');
-    audioRef.current.loop = true;
-    audioRef.current.volume = 0.3;
-    
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
+
   }, []);
 
   // Auto-save effects
@@ -452,17 +447,6 @@ export default function EditorWithImages() {
       localStorage.setItem('cartemagique_imageElements', JSON.stringify(imageElements));
     }
   }, [imageElements, isClient]);
-
-  const toggleMusic = () => {
-    if (!audioRef.current) return;
-    
-    if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play().catch(e => console.log("Lecture auto bloquée par le navigateur", e));
-    }
-    setIsPlaying(!isPlaying);
-  };
 
   const addSticker = (emoji: string) => {
     // Convertir l'emoji en image via canvas
@@ -526,7 +510,9 @@ export default function EditorWithImages() {
     const renderVersion = ++renderVersionRef.current;
 
     try {
-      const rendered = await renderCardToCanvas(canvas, {
+      const base = document.createElement('canvas');
+      base.width = canvas.width; base.height = canvas.height;
+      const rendered = await renderCardToCanvas(base, {
         aspectRatio,
         backgroundColor,
         backgroundImage: selectedTheme.image,
@@ -536,28 +522,46 @@ export default function EditorWithImages() {
         showFrame,
         frameWidth,
       }, loadCanvasImage, () => renderVersion === renderVersionRef.current);
-      if (rendered && renderVersion === renderVersionRef.current) setRenderError(null);
+      if (rendered && renderVersion === renderVersionRef.current) {
+        setRenderError(null);
+        baseCanvasRef.current = base;
+        const context = canvas.getContext('2d');
+        if (context) { context.clearRect(0, 0, canvas.width, canvas.height); context.drawImage(base, 0, 0); }
+
+      }
     } catch (error) {
       if (renderVersion === renderVersionRef.current) {
+        baseCanvasRef.current = null;
         canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
         setRenderError(error instanceof Error ? error.message : 'Le rendu de la carte a échoué.');
       }
       console.warn('Rendu de carte incomplet :', error);
     }
-  }, [aspectRatio, backgroundColor, frameWidth, imageElements, loadCanvasImage, selectedTheme.image, showCanvas, showFrame, textBlocks, textStyles]);
+  }, [aspectRatio, backgroundColor, cardAnimation, frameWidth, imageElements, loadCanvasImage, selectedTheme.image, showCanvas, showFrame, textBlocks, textStyles]);
 
-  // Une image par animation : le déplacement reste fluide, même avec plusieurs photos.
   useEffect(() => {
     if (!showCanvas) return;
-    if (renderFrameRef.current) cancelAnimationFrame(renderFrameRef.current);
-    renderFrameRef.current = requestAnimationFrame(() => {
-      renderFrameRef.current = null;
-      void drawCard();
-    });
-    return () => {
-      if (renderFrameRef.current) cancelAnimationFrame(renderFrameRef.current);
+    let cancelled = false;
+    let lastFrame = 0;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const tick = (now: number) => {
+      if (cancelled) return;
+      const canvas = canvasRef.current; const base = baseCanvasRef.current;
+      if (!document.hidden && now - lastFrame >= 40 && canvas && base) {
+        lastFrame = now; const context = canvas.getContext('2d');
+        if (context) {
+          context.clearRect(0, 0, canvas.width, canvas.height); context.drawImage(base, 0, 0);
+          if (!reduced.matches) drawCardEffects(context, canvas.width, canvas.height, cardAnimation, now / 1000);
+        }
+      }
+      if (!cancelled && cardAnimation !== 'none' && !reduced.matches) renderFrameRef.current = requestAnimationFrame(tick);
     };
-  }, [drawCard, showCanvas]);
+    const restart = () => { if (renderFrameRef.current) cancelAnimationFrame(renderFrameRef.current); renderFrameRef.current = requestAnimationFrame(tick); };
+    baseCanvasRef.current = null;
+    void drawCard().then(() => { if (!cancelled) restart(); });
+    reduced.addEventListener('change', restart); document.addEventListener('visibilitychange', restart);
+    return () => { cancelled = true; renderVersionRef.current++; if (renderFrameRef.current) cancelAnimationFrame(renderFrameRef.current); reduced.removeEventListener('change', restart); document.removeEventListener('visibilitychange', restart); };
+  }, [drawCard, showCanvas, cardAnimation]);
 
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     e.preventDefault();
@@ -893,7 +897,7 @@ export default function EditorWithImages() {
     setShowTextAssistant(false);
   };
 
-  const createExportBlob = async () => {
+  const createExportCanvas = async () => {
     const { width, height } = getCardCanvasSize(aspectRatio);
     const exportCanvas = document.createElement('canvas');
     exportCanvas.width = width;
@@ -911,6 +915,11 @@ export default function EditorWithImages() {
     }, loadCanvasImage);
     if (!rendered) throw new Error('Le rendu de la carte a été interrompu.');
 
+    return exportCanvas;
+  };
+
+  const createExportBlob = async () => {
+    const exportCanvas = await createExportCanvas();
     return new Promise<Blob>((resolve, reject) => {
       exportCanvas.toBlob(
         (blob) => blob ? resolve(blob) : reject(new Error('PNG indisponible')),
@@ -1120,6 +1129,7 @@ export default function EditorWithImages() {
           ✨ CarteMagique
         </h1>
         <div className="flex gap-2">
+          <ThemeToggle />
           <button 
             onClick={handleUndo} 
             disabled={historyIndex <= 0}
@@ -1351,6 +1361,7 @@ export default function EditorWithImages() {
             </div>
 
             <div className="max-w-6xl mx-auto px-2 md:px-4">
+              <CardMediaControls themeId={selectedTheme.id} onAnimationChange={setCardAnimation} prepareCanvas={createExportCanvas} />
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-6">
                 {/* Carte */}
                 <div className="lg:col-span-2 order-1">
@@ -2236,3 +2247,4 @@ export default function EditorWithImages() {
     </div>
   );
 }
+

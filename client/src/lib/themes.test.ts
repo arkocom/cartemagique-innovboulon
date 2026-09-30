@@ -17,9 +17,9 @@ const localThemeAssets: Record<string, string> = {
 const localFiles = [...new Set(Object.values(localThemeAssets))];
 
 describe('local card background catalogue', () => {
-  it('preserves existing theme IDs and exposes nineteen working designs', () => {
+  it('preserves existing theme IDs and exposes all seventy-three models', () => {
     expect(themes).toHaveLength(73);
-    expect(galleryThemes).toHaveLength(19);
+    expect(galleryThemes).toHaveLength(73);
     expect(new Set(themes.map((theme) => theme.id)).size).toBe(themes.length);
 
     for (const [themeId, fileName] of Object.entries(localThemeAssets)) {
@@ -28,6 +28,12 @@ describe('local card background catalogue', () => {
       expect(theme?.image).toBe(`/backgrounds/${fileName}`);
       expect(theme?.preview).toBe(`/backgrounds/${fileName}`);
     }
+  });
+
+  it('restores all fifty-four missing backgrounds as distinct assets', () => {
+    const restored = themes.filter(theme => theme.image.startsWith('/backgrounds/collection/'));
+    expect(restored).toHaveLength(54);
+    expect(new Set(restored.map(theme => theme.image)).size).toBe(54);
   });
 
   it('uses local image files for every current and legacy theme', () => {

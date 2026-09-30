@@ -232,3 +232,16 @@
     transform: scale(1);
   }
 }
+
+/* Le thème de l’interface ne modifie jamais les photos ni le canvas. */
+[data-theme="light"] .app-shell :is(.bg-slate-900,.bg-slate-950) { background-color: #f8fafc; }
+[data-theme="light"] .app-shell :is(.bg-gray-900,.bg-gray-800,.bg-slate-800) { background-color: #ffffff; }
+[data-theme="light"] .app-shell :is(.bg-gray-700,.bg-slate-700) { background-color: #e2e8f0; }
+[data-theme="light"] .app-shell :is(.text-gray-300,.text-slate-300,.text-gray-400,.text-slate-400) { color: #475569; }
+[data-theme="light"] .app-shell :is(.border-gray-800,.border-gray-700,.border-slate-700) { border-color: #cbd5e1; }
+[data-theme="light"] .app-shell :is(.bg-slate-900,.bg-gray-900,.bg-gray-800,.bg-slate-800,.bg-gray-700) { color: #0f172a; }
+[data-theme="light"] .app-shell :is(header,.bg-gray-800,.bg-gray-900) .text-white { color: #0f172a; }
+[data-theme="light"] .app-shell :is(button,a)[class*="bg-blue-"],
+[data-theme="light"] .app-shell :is(button,a)[class*="bg-pink-"],
+[data-theme="light"] .app-shell :is(button,a)[class*="bg-gradient-"] { color: #fff; }
+[data-theme="light"] .app-shell :is(select,input[type="text"],textarea) { color-scheme: light; }
