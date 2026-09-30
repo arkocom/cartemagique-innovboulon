@@ -11,6 +11,7 @@ import ThemeSelectorComplete from '@/components/ThemeSelectorComplete';
 import TextAssistantDialog from '@/components/TextAssistantDialog';
 import { Trash2, Plus, Upload, RotateCw, ZoomIn, ZoomOut, AlignLeft, AlignCenter, AlignRight, Wand2, Undo, Redo, Smartphone, Monitor, Type, LayoutGrid, ImagePlus, SlidersHorizontal, Send, X } from 'lucide-react';
 import { getCardCanvasSize, renderCardToCanvas, type CardCanvasTextStyle } from '@/lib/cardCanvas';
+import { isShareAbortError } from '@/lib/shareUtils';
 
 type TextStyle = 'classic' | 'modern' | 'elegant' | 'festive' | string;
 
@@ -1042,19 +1043,28 @@ export default function EditorWithImages() {
 
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent("Regarde la carte que j'ai créée avec CarteMagique ! ✨")}`;
     const sampleFile = new File([], 'carte-magique.png', { type: 'image/png' });
-    const canShareFiles = Boolean(
-      typeof navigator.share === 'function' &&
-      typeof navigator.canShare === 'function' &&
-      navigator.canShare({ files: [sampleFile] }),
-    );
+    let canShareFiles = false;
+
+    try {
+      canShareFiles = Boolean(
+        typeof navigator.share === 'function' &&
+        typeof navigator.canShare === 'function' &&
+        navigator.canShare({ files: [sampleFile] }),
+      );
+    } catch {
+      canShareFiles = false;
+    }
 
     // Open the external page directly in the click handler so popup blockers do not
     // discard it while the card's images are loading.
     if (!canShareFiles) window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
 
     setIsExporting(true);
+    let pngReady = false;
+
     try {
       const blob = await createExportBlob();
+      pngReady = true;
       const file = new File([blob], `carte-magique-${Date.now()}.png`, { type: 'image/png' });
 
       if (canShareFiles && navigator.share) {
@@ -1075,8 +1085,17 @@ export default function EditorWithImages() {
       document.body.removeChild(link);
       window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
     } catch (error) {
+      if (isShareAbortError(error)) {
+        console.info('Partage annulé par l’utilisateur.');
+        return;
+      }
+
       console.error('Erreur lors du partage WhatsApp :', error);
-      alert('Impossible de préparer le PNG. Réessayez dans un instant.');
+      if (pngReady) {
+        alert('Le PNG a été créé, mais le partage n’a pas pu être lancé.');
+      } else {
+        alert('Impossible de préparer le PNG. Réessayez dans un instant.');
+      }
     } finally {
       setIsExporting(false);
     }

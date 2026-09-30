@@ -63,6 +63,79 @@ export function getCardCanvasSize(aspectRatio: CardAspectRatio): CardCanvasSize 
   return { width: aspectRatio === 'story' ? 338 : 400, height: 600 };
 }
 
+const TEXT_SAFE_MARGIN = 16;
+
+function wrapTextToWidth(
+  context: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+): string[] {
+  const lines: string[] = [];
+
+  for (const paragraph of text.split('\n')) {
+    if (!paragraph.trim()) {
+      lines.push('');
+      continue;
+    }
+
+    let currentLine = '';
+    for (const word of paragraph.trim().split(/\s+/)) {
+      const candidate = currentLine ? `${currentLine} ${word}` : word;
+      if (context.measureText(candidate).width <= maxWidth) {
+        currentLine = candidate;
+        continue;
+      }
+
+      if (currentLine) {
+        lines.push(currentLine);
+        currentLine = '';
+      }
+
+      if (context.measureText(word).width <= maxWidth) {
+        currentLine = word;
+        continue;
+      }
+
+      let chunk = '';
+      for (const character of word) {
+        const nextChunk = chunk + character;
+        if (chunk && context.measureText(nextChunk).width > maxWidth) {
+          lines.push(chunk);
+          chunk = character;
+        } else {
+          chunk = nextChunk;
+        }
+      }
+      currentLine = chunk;
+    }
+
+    lines.push(currentLine);
+  }
+
+  return lines.length ? lines : [''];
+}
+
+function clampTextAnchorX(
+  align: 'left' | 'center' | 'right',
+  desiredX: number,
+  widestLine: number,
+  canvasWidth: number,
+  inset: number,
+): number {
+  if (align === 'left') {
+    return Math.min(Math.max(desiredX, inset), canvasWidth - inset - widestLine);
+  }
+  if (align === 'right') {
+    return Math.min(Math.max(desiredX, inset + widestLine), canvasWidth - inset);
+  }
+
+  const halfWidth = widestLine / 2;
+  return Math.min(
+    Math.max(desiredX, inset + halfWidth),
+    canvasWidth - inset - halfWidth,
+  );
+}
+
 /**
  * Draws one immutable editor snapshot to the provided canvas. Returning false
  * means a newer preview render superseded this one before any pixels were drawn.
@@ -142,16 +215,26 @@ export async function renderCardToCanvas(
     context.save();
     context.font = `bold ${block.fontSize}px ${style.fontFamily}`;
     context.fillStyle = block.color;
-    context.textAlign = block.align || 'center';
+    const align = block.align || 'center';
+    context.textAlign = align;
     context.textBaseline = 'middle';
     context.shadowColor = style.shadowColor;
     context.shadowBlur = style.shadowBlur;
     context.shadowOffsetX = 2;
     context.shadowOffsetY = 2;
 
-    const lines = block.text.split('\n');
+    const safeInset = Math.max(
+      TEXT_SAFE_MARGIN,
+      options.showFrame ? options.frameWidth + 8 : TEXT_SAFE_MARGIN,
+    );
+    const maxTextWidth = Math.max(40, width - safeInset * 2);
+    const lines = wrapTextToWidth(context, block.text, maxTextWidth);
+    const lineWidths = lines.map((line) => context.measureText(line).width);
+    const widestLine = Math.min(maxTextWidth, Math.max(0, ...lineWidths));
+    const drawX = clampTextAnchorX(align, block.x, widestLine, width, safeInset);
     const lineHeight = block.fontSize * 1.2;
     const startY = block.y - (lines.length * lineHeight) / 2 + lineHeight / 2;
+
     lines.forEach((line, index) => {
       const lineY = startY + index * lineHeight;
       if (style.outline) {
@@ -159,9 +242,9 @@ export async function renderCardToCanvas(
         context.lineWidth = style.outlineWidth || 2;
         context.lineJoin = 'round';
         context.miterLimit = 2;
-        context.strokeText(line, block.x, lineY);
+        context.strokeText(line, drawX, lineY);
       }
-      context.fillText(line, block.x, lineY);
+      context.fillText(line, drawX, lineY);
     });
     context.restore();
   });

@@ -20,6 +20,7 @@ function createMockCanvas() {
     restore: vi.fn(),
     translate: vi.fn(),
     rotate: vi.fn(),
+    measureText: vi.fn((text: string) => ({ width: text.length * 10 })),
     strokeText: vi.fn((text: string) => operations.push(`stroke:${text}`)),
     fillText: vi.fn((text: string) => operations.push(`text:${text}`)),
   };
@@ -117,4 +118,32 @@ describe('card canvas rendering', () => {
     await expect(rendering).resolves.toBe(false);
     expect(operations).toEqual([]);
   });
+  it('keeps Story text inside the visible canvas even when its saved x position is too far right', async () => {
+    const { canvas, context } = createMockCanvas();
+    await renderCardToCanvas(
+      canvas,
+      createOptions({
+        aspectRatio: 'story',
+        textBlocks: [{
+          text: 'Test local mobile',
+          x: 320,
+          y: 300,
+          color: '#ffffff',
+          fontSize: 28,
+          style: 'modern',
+          align: 'center',
+        }],
+      }),
+      () => Promise.reject(new Error('No image expected')),
+    );
+
+    const calls = context.fillText.mock.calls as unknown as Array<[string, number, number]>;
+    expect(calls.length).toBeGreaterThan(0);
+    for (const [line, x] of calls) {
+      const halfWidth = (line.length * 10) / 2;
+      expect(x - halfWidth).toBeGreaterThanOrEqual(16);
+      expect(x + halfWidth).toBeLessThanOrEqual(338 - 16);
+    }
+  });
+
 });
