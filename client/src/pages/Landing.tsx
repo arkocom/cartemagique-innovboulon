@@ -64,7 +64,7 @@ export default function Landing() {
       </div>
 
       <div className="absolute top-5 left-5 sm:top-8 sm:left-8 z-20">
-        <img src="/manus-storage/logo-innovboulon_db9c0ffd.jpg" alt="Innov'BOULON" className="h-12 w-12 sm:h-16 sm:w-16 rounded-full shadow-lg" />
+        <img src="/pwa-192.png" alt="Innov'BOULON" className="h-12 w-12 sm:h-16 sm:w-16 rounded-full shadow-lg" />
       </div>
 
       <main className="z-10 text-center max-w-2xl animate-fade-in px-2">

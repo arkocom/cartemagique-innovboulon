@@ -213,7 +213,7 @@ export default function EditorEnhanced() {
       <header className="py-4 px-4 border-b border-gray-800 flex items-center justify-between">
         <Link href="/">
           <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2">
-            <img src="/manus-storage/logo-innovboulon_db9c0ffd.jpg" alt="Innov'BOULON" className="h-10 w-10 rounded-full" />
+            <img src="/pwa-192.png" alt="Innov'BOULON" className="h-10 w-10 rounded-full" />
             ← Retour
           </button>
         </Link>

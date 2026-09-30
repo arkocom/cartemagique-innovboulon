@@ -18,12 +18,14 @@ if ("serviceWorker" in navigator && import.meta.env.PROD) {
         if (document.visibilityState === "visible") refreshUpdate();
       });
 
-      // Le nouveau service worker se remplace immédiatement et recharge la page une seule fois.
-      let refreshing = false;
+      // Une mise à jour ne doit pas interrompre une carte en cours d’édition.
+      let hasController = Boolean(navigator.serviceWorker.controller);
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (refreshing) return;
-        refreshing = true;
-        window.location.reload();
+        if (!hasController) {
+          hasController = true;
+          return;
+        }
+        window.dispatchEvent(new Event("cartemagique:update-ready"));
       });
     } catch (error) {
       console.warn("Service worker indisponible :", error);

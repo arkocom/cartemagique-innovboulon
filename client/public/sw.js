@@ -1,4 +1,4 @@
-const VERSION = "2026-09-30-3";
+const VERSION = "2026-10-01-7-vercel";
 const SHELL_CACHE = `cartemagique-shell-${VERSION}`;
 const RUNTIME_CACHE = `cartemagique-runtime-${VERSION}`;
 const APP_CACHE_PREFIX = "cartemagique-";
@@ -92,3 +92,4 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(staleWhileRevalidate(request));
   }
 });
+

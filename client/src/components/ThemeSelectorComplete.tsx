@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { themes } from '@/lib/themes';
+import { galleryThemes } from '@/lib/themes';
 import { useAppStore } from '@/stores/appStore';
 import type { Category } from '@/../../shared/types';
 
@@ -8,7 +8,7 @@ export default function ThemeSelectorComplete() {
   const selectedThemeId = useAppStore((state) => state.selectedThemeId);
   const setSelectedThemeId = useAppStore((state) => state.setSelectedThemeId);
 
-  const filteredThemes = themes.filter((theme) =>
+  const filteredThemes = galleryThemes.filter((theme) =>
     theme.id.startsWith(activeCategory)
   );
 
