@@ -56,10 +56,11 @@ export default function ThemeSelector() {
             >
               <div className="relative aspect-[4/5] bg-slate-800">
                 <img
-                  src={theme.image}
+                  src={theme.preview}
                   alt={theme.name}
                   className="w-full h-full object-cover transition-transform group-hover:scale-105"
                   loading="lazy"
+                  decoding="async"
                 />
                 {isSelected && (
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center">

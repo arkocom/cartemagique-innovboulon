@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { AlertTriangle, RotateCcw } from "lucide-react";
+import { AlertTriangle, Home, RotateCcw } from "lucide-react";
 import { Component, ReactNode } from "react";
 
 interface Props {
@@ -8,48 +8,40 @@ interface Props {
 
 interface State {
   hasError: boolean;
-  error: Error | null;
 }
 
 class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+  static getDerivedStateFromError(): State {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error) {
+    console.error("Erreur d’affichage CarteMagique :", error);
   }
 
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex items-center justify-center min-h-screen p-8 bg-background">
-          <div className="flex flex-col items-center w-full max-w-2xl p-8">
-            <AlertTriangle
-              size={48}
-              className="text-destructive mb-6 flex-shrink-0"
-            />
-
-            <h2 className="text-xl mb-4">An unexpected error occurred.</h2>
-
-            <div className="p-4 w-full rounded bg-muted overflow-auto mb-6">
-              <pre className="text-sm text-muted-foreground whitespace-break-spaces">
-                {this.state.error?.stack}
-              </pre>
+        <div className="min-h-screen flex items-center justify-center p-5 bg-slate-950 text-white">
+          <div className="w-full max-w-md rounded-3xl border border-slate-700 bg-slate-900 p-7 text-center shadow-2xl">
+            <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-400/15 text-amber-300">
+              <AlertTriangle size={28} />
             </div>
-
-            <button
-              onClick={() => window.location.reload()}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-lg",
-                "bg-primary text-primary-foreground",
-                "hover:opacity-90 cursor-pointer"
-              )}
-            >
-              <RotateCcw size={16} />
-              Reload Page
-            </button>
+            <h1 className="text-xl font-bold">Un affichage a été interrompu</h1>
+            <p className="mt-3 text-sm leading-relaxed text-slate-300">Vos créations enregistrées sur cet appareil ne sont pas supprimées. Rechargez l&apos;application pour continuer.</p>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <button onClick={() => window.location.reload()} className={cn("inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 font-bold text-slate-950 transition active:scale-[0.98] hover:bg-amber-400")}>
+                <RotateCcw size={17} /> Recharger
+              </button>
+              <button onClick={() => window.location.assign("/")} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-600 px-4 font-semibold text-white transition active:scale-[0.98] hover:bg-white/10">
+                <Home size={17} /> Accueil
+              </button>
+            </div>
           </div>
         </div>
       );

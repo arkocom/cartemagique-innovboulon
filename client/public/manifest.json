@@ -1,21 +1,38 @@
 {
-  "name": "CarteMagique",
+  "id": "/",
+  "name": "CarteMagique · Innov'BOULON",
   "short_name": "CarteMagique",
-  "description": "Créez des cartes de vœux magiques en quelques clics",
-  "start_url": "/",
+  "description": "Créez des cartes de vœux magiques en quelques clics.",
+  "lang": "fr-FR",
+  "start_url": "/?source=pwa",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "orientation": "any",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
+  "categories": ["productivity", "photo", "design"],
   "icons": [
     {
-      "src": "/logo-innovboulon.jpg",
+      "src": "/pwa-192.png",
       "sizes": "192x192",
-      "type": "image/jpeg"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/logo-innovboulon.jpg",
+      "src": "/pwa-512.png",
       "sizes": "512x512",
-      "type": "image/jpeg"
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Créer une carte",
+      "short_name": "Nouvelle carte",
+      "description": "Ouvrir l'éditeur de CarteMagique",
+      "url": "/editor?source=pwa",
+      "icons": [{ "src": "/pwa-192.png", "sizes": "192x192" }]
     }
   ]
 }

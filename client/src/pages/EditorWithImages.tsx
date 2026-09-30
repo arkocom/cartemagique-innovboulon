@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import ThemeSelectorComplete from '@/components/ThemeSelectorComplete';
-import { Trash2, Plus, Upload, RotateCw, ZoomIn, ZoomOut, AlignLeft, AlignCenter, AlignRight, Wand2, Undo, Redo, Smartphone, Monitor, Type, LayoutGrid } from 'lucide-react';
+import TextAssistantDialog from '@/components/TextAssistantDialog';
+import { Trash2, Plus, Upload, RotateCw, ZoomIn, ZoomOut, AlignLeft, AlignCenter, AlignRight, Wand2, Undo, Redo, Smartphone, Monitor, Type, LayoutGrid, ImagePlus, SlidersHorizontal, Send, X } from 'lucide-react';
 
 type TextStyle = 'classic' | 'modern' | 'elegant' | 'festive' | string;
 
@@ -139,6 +140,9 @@ export default function EditorWithImages() {
   const [textStyles, setTextStyles] = useState<Record<string, any>>(INITIAL_TEXT_STYLES);
   const [backgroundColor, setBackgroundColor] = useState<string>(''); // Empty string means use image
   const [showCollageMenu, setShowCollageMenu] = useState(false);
+  const [collageNotice, setCollageNotice] = useState('Ajoutez une ou plusieurs photos, puis choisissez une disposition.');
+  const [mobileTool, setMobileTool] = useState<'text' | 'photo' | 'style' | 'share' | null>(null);
+  const [showTextAssistant, setShowTextAssistant] = useState(false);
   
   const handleFontUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -181,94 +185,56 @@ export default function EditorWithImages() {
     reader.readAsDataURL(file);
   };
 
-  // Smart Collage Layouts
-  const applyCollageLayout = (count: number) => {
-    // Filter only images (not stickers) - assuming stickers have small initial size or specific IDs
-    // For now, we'll just re-arrange all current images
-    // In a real app, we might want to distinguish between "photos" and "stickers"
-    
+  // Smart Collage Layouts — ne touche qu'aux vraies photos, jamais aux stickers.
+  const applyCollageLayout = (requestedCount: number) => {
     const canvasWidth = aspectRatio === 'story' ? 338 : 400;
     const canvasHeight = 600;
-    const padding = 20;
-    const availableWidth = canvasWidth - (padding * 2);
-    const availableHeight = canvasHeight - (padding * 2);
-    
-    // Create new image elements based on current ones but with new positions/sizes
-    const newImages = [...imageElements];
-    
-    if (newImages.length === 0) return;
-    
-    // If we have more images than the requested layout, we only arrange the first N
-    // Or we arrange all of them in a grid
-    const imagesToArrange = newImages.slice(0, Math.max(count, newImages.length));
-    const layoutCount = imagesToArrange.length;
-    
-    if (layoutCount === 1) {
-      // Single image centered
-      imagesToArrange[0].x = canvasWidth / 2 - 150;
-      imagesToArrange[0].y = canvasHeight / 2 - 150;
-      imagesToArrange[0].width = 300;
-      imagesToArrange[0].height = 300;
-      imagesToArrange[0].rotation = 0;
-    } else if (layoutCount === 2) {
-      // Two images vertical split
-      const imgHeight = (availableHeight - padding) / 2;
-      
-      imagesToArrange[0].x = padding;
-      imagesToArrange[0].y = padding;
-      imagesToArrange[0].width = availableWidth;
-      imagesToArrange[0].height = imgHeight;
-      imagesToArrange[0].rotation = 0;
-      
-      imagesToArrange[1].x = padding;
-      imagesToArrange[1].y = padding + imgHeight + padding;
-      imagesToArrange[1].width = availableWidth;
-      imagesToArrange[1].height = imgHeight;
-      imagesToArrange[1].rotation = 0;
-    } else if (layoutCount === 3) {
-      // One top, two bottom
-      const topHeight = (availableHeight - padding) * 0.6;
-      const bottomHeight = (availableHeight - padding) * 0.4;
+    const padding = 16;
+    const photos = imageElements.filter((image) => !image.id.startsWith('sticker-'));
+
+    if (photos.length === 0) {
+      setCollageNotice('Ajoutez d’abord au moins une photo personnelle pour créer un collage.');
+      return;
+    }
+
+    const imagesToArrange = photos.slice(0, Math.min(requestedCount, photos.length));
+    const count = imagesToArrange.length;
+    const availableWidth = canvasWidth - padding * 2;
+    const availableHeight = canvasHeight - padding * 2;
+    const layout = new Map<string, Pick<ImageElement, 'x' | 'y' | 'width' | 'height' | 'rotation'>>();
+
+    if (count === 1) {
+      layout.set(imagesToArrange[0].id, { x: padding, y: padding, width: availableWidth, height: availableHeight, rotation: 0 });
+    } else if (count === 2) {
+      const height = (availableHeight - padding) / 2;
+      imagesToArrange.forEach((image, index) => {
+        layout.set(image.id, { x: padding, y: padding + index * (height + padding), width: availableWidth, height, rotation: 0 });
+      });
+    } else if (count === 3) {
+      const topHeight = (availableHeight - padding) * 0.58;
+      const bottomHeight = availableHeight - padding - topHeight;
       const bottomWidth = (availableWidth - padding) / 2;
-      
-      imagesToArrange[0].x = padding;
-      imagesToArrange[0].y = padding;
-      imagesToArrange[0].width = availableWidth;
-      imagesToArrange[0].height = topHeight;
-      imagesToArrange[0].rotation = 0;
-      
-      imagesToArrange[1].x = padding;
-      imagesToArrange[1].y = padding + topHeight + padding;
-      imagesToArrange[1].width = bottomWidth;
-      imagesToArrange[1].height = bottomHeight;
-      imagesToArrange[1].rotation = 0;
-      
-      imagesToArrange[2].x = padding + bottomWidth + padding;
-      imagesToArrange[2].y = padding + topHeight + padding;
-      imagesToArrange[2].width = bottomWidth;
-      imagesToArrange[2].height = bottomHeight;
-      imagesToArrange[2].rotation = 0;
-    } else if (layoutCount >= 4) {
-      // 2x2 Grid
-      const imgWidth = (availableWidth - padding) / 2;
-      const imgHeight = (availableHeight - padding) / 2;
-      
-      imagesToArrange.forEach((img, index) => {
-        const row = Math.floor(index / 2);
-        const col = index % 2;
-        
-        if (row < 2) { // Only handle first 4 for 2x2 grid properly, others will stack
-          img.x = padding + (col * (imgWidth + padding));
-          img.y = padding + (row * (imgHeight + padding));
-          img.width = imgWidth;
-          img.height = imgHeight;
-          img.rotation = 0;
-        }
+      layout.set(imagesToArrange[0].id, { x: padding, y: padding, width: availableWidth, height: topHeight, rotation: 0 });
+      layout.set(imagesToArrange[1].id, { x: padding, y: padding + topHeight + padding, width: bottomWidth, height: bottomHeight, rotation: 0 });
+      layout.set(imagesToArrange[2].id, { x: padding + bottomWidth + padding, y: padding + topHeight + padding, width: bottomWidth, height: bottomHeight, rotation: 0 });
+    } else {
+      const width = (availableWidth - padding) / 2;
+      const height = (availableHeight - padding) / 2;
+      imagesToArrange.slice(0, 4).forEach((image, index) => {
+        layout.set(image.id, {
+          x: padding + (index % 2) * (width + padding),
+          y: padding + Math.floor(index / 2) * (height + padding),
+          width,
+          height,
+          rotation: 0,
+        });
       });
     }
-    
-    setImageElements(newImages);
-    addToHistory();
+
+    setImageElements((current) => current.map((image) => ({ ...image, ...(layout.get(image.id) ?? {}) })));
+    setSelectedImageId(imagesToArrange[0]?.id ?? null);
+    setSelectedBlockId('');
+    setCollageNotice(`${count} photo${count > 1 ? 's' : ''} disposée${count > 1 ? 's' : ''} — les stickers restent à leur place.`);
   };
 
   // History state
@@ -452,6 +418,9 @@ export default function EditorWithImages() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageCacheRef = useRef<Map<string, Promise<HTMLImageElement>>>(new Map());
+  const renderFrameRef = useRef<number | null>(null);
+  const renderVersionRef = useRef(0);
 
   useEffect(() => {
     setIsClient(true);
@@ -518,122 +487,118 @@ export default function EditorWithImages() {
       filter: 'none', // Add filter property to new images
     };
     
-    setImageElements([...imageElements, newImage]);
+    setImageElements((current) => [...current, newImage]);
     setSelectedImageId(newImage.id);
     setSelectedBlockId('');
   };
 
   const selectedBlock = textBlocks.find((b) => b.id === selectedBlockId);
   const selectedImage = imageElements.find((img) => img.id === selectedImageId);
+  const photoCount = imageElements.filter((image) => !image.id.startsWith('sticker-')).length;
 
-  // Dessiner la carte sur le canvas
-  useEffect(() => {
-    if (!canvasRef.current || !showCanvas) return;
+  const loadCanvasImage = useCallback((src: string) => {
+    const cached = imageCacheRef.current.get(src);
+    if (cached) return cached;
 
+    const promise = new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new Image();
+      image.crossOrigin = 'anonymous';
+      image.decoding = 'async';
+      image.onload = () => resolve(image);
+      image.onerror = () => {
+        imageCacheRef.current.delete(src);
+        reject(new Error(`Impossible de charger l’image : ${src}`));
+      };
+      image.src = src;
+    });
+
+    imageCacheRef.current.set(src, promise);
+    return promise;
+  }, []);
+
+  const drawCard = useCallback(async () => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx || !showCanvas) return;
 
-    const img = new Image();
-    // IMPORTANT: crossOrigin doit être défini AVANT src pour éviter le tainting du canvas
-    img.crossOrigin = 'anonymous';
-    img.src = selectedTheme.image;
-    
-    const canvasWidth = aspectRatio === 'story' ? 338 : 400; // 338x600 is approx 9:16
-    
-    img.onload = () => {
-      ctx.clearRect(0, 0, 400, 600);
-      
-      // Draw background with "cover" fit
-      const scale = Math.max(canvasWidth / img.width, 600 / img.height);
-      const x = (canvasWidth / 2) - (img.width / 2) * scale;
-      const y = (600 / 2) - (img.height / 2) * scale;
-      ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
-      
-      // Dessiner les images
-      // Nous devons attendre que toutes les images soient chargées avant de dessiner le texte
-      // pour s'assurer que le texte est toujours au-dessus
-      const imagePromises = imageElements.map((imgElem) => {
-        return new Promise<void>((resolve) => {
-          const image = new Image();
-          image.crossOrigin = 'anonymous';
-          image.src = imgElem.src;
-          
-          image.onload = () => {
-            ctx.save();
-            ctx.translate(imgElem.x + imgElem.width / 2, imgElem.y + imgElem.height / 2);
-            ctx.rotate((imgElem.rotation * Math.PI) / 180);
-            
-            // Apply filters
-            if (imgElem.filter && imgElem.filter !== 'none') {
-              if (imgElem.filter === 'grayscale') {
-                ctx.filter = 'grayscale(100%)';
-              } else if (imgElem.filter === 'sepia') {
-                ctx.filter = 'sepia(100%)';
-              } else if (imgElem.filter === 'vintage') {
-                ctx.filter = 'sepia(50%) contrast(120%) brightness(90%)';
-              }
-            }
+    const renderVersion = ++renderVersionRef.current;
+    const canvasWidth = aspectRatio === 'story' ? 338 : 400;
 
-            // Apply tint if specified and not 'original'
-            if (imgElem.tint && imgElem.tint !== 'original') {
-              // Create a temporary canvas for tinting
-              const tintCanvas = document.createElement('canvas');
-              tintCanvas.width = image.width;
-              tintCanvas.height = image.height;
-              const tintCtx = tintCanvas.getContext('2d');
-              
-              if (tintCtx) {
-                // Draw original image
-                tintCtx.drawImage(image, 0, 0);
-                
-                // Set composite operation to source-in to only draw on non-transparent pixels
-                tintCtx.globalCompositeOperation = 'source-in';
-                tintCtx.fillStyle = imgElem.tint;
-                tintCtx.fillRect(0, 0, tintCanvas.width, tintCanvas.height);
-                
-                // Draw the tinted version
-                ctx.drawImage(tintCanvas, -imgElem.width / 2, -imgElem.height / 2, imgElem.width, imgElem.height);
-              } else {
-                // Fallback if tinting fails
-                ctx.drawImage(image, -imgElem.width / 2, -imgElem.height / 2, imgElem.width, imgElem.height);
-              }
-            } else {
-              ctx.drawImage(image, -imgElem.width / 2, -imgElem.height / 2, imgElem.width, imgElem.height);
-            }
-            
-            ctx.restore();
-            resolve();
-          };
-          image.onerror = () => resolve(); // Resolve even on error to continue
-        });
+    try {
+      const [background, ...loadedElements] = await Promise.all([
+        backgroundColor ? Promise.resolve(null) : loadCanvasImage(selectedTheme.image),
+        ...imageElements.map((element) => loadCanvasImage(element.src).catch(() => null)),
+      ]);
+
+      // Ignore un rendu devenu obsolète pendant le chargement des images.
+      if (renderVersion !== renderVersionRef.current) return;
+
+      ctx.clearRect(0, 0, canvasWidth, 600);
+      if (backgroundColor) {
+        ctx.fillStyle = backgroundColor;
+        ctx.fillRect(0, 0, canvasWidth, 600);
+      } else if (background) {
+        const scale = Math.max(canvasWidth / background.width, 600 / background.height);
+        const x = canvasWidth / 2 - (background.width * scale) / 2;
+        const y = 300 - (background.height * scale) / 2;
+        ctx.drawImage(background, x, y, background.width * scale, background.height * scale);
+      }
+
+      // Le cadre est peint avant les éléments : le texte reste toujours lisible au premier plan.
+      if (showFrame && frameWidth > 0) {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, frameWidth, 600);
+        ctx.fillRect(canvasWidth - frameWidth, 0, frameWidth, 600);
+        ctx.fillRect(0, 0, canvasWidth, frameWidth);
+        ctx.fillRect(0, 600 - frameWidth, canvasWidth, frameWidth);
+      }
+
+      imageElements.forEach((element, index) => {
+        const image = loadedElements[index];
+        if (!image) return;
+        ctx.save();
+        ctx.translate(element.x + element.width / 2, element.y + element.height / 2);
+        ctx.rotate((element.rotation * Math.PI) / 180);
+
+        if (element.filter === 'grayscale') ctx.filter = 'grayscale(100%)';
+        if (element.filter === 'sepia') ctx.filter = 'sepia(100%)';
+        if (element.filter === 'vintage') ctx.filter = 'sepia(50%) contrast(120%) brightness(90%)';
+
+        if (element.tint && element.tint !== 'original') {
+          const tintCanvas = document.createElement('canvas');
+          tintCanvas.width = image.width;
+          tintCanvas.height = image.height;
+          const tintContext = tintCanvas.getContext('2d');
+          if (tintContext) {
+            tintContext.drawImage(image, 0, 0);
+            tintContext.globalCompositeOperation = 'source-in';
+            tintContext.fillStyle = element.tint;
+            tintContext.fillRect(0, 0, tintCanvas.width, tintCanvas.height);
+            ctx.drawImage(tintCanvas, -element.width / 2, -element.height / 2, element.width, element.height);
+          }
+        } else {
+          ctx.drawImage(image, -element.width / 2, -element.height / 2, element.width, element.height);
+        }
+        ctx.restore();
       });
 
-      // Attendre que toutes les images soient dessinées avant de dessiner le texte
-      Promise.all(imagePromises).then(() => {
-        // Dessiner les blocs de texte
-        textBlocks.forEach((block) => {
-        const style = textStyles[block.style];
-        
+      textBlocks.forEach((block) => {
+        const style = textStyles[block.style] ?? INITIAL_TEXT_STYLES.modern;
+        ctx.save();
         ctx.font = `bold ${block.fontSize}px ${style.fontFamily}`;
         ctx.fillStyle = block.color;
         ctx.textAlign = block.align || 'center';
         ctx.textBaseline = 'middle';
-        
         ctx.shadowColor = style.shadowColor;
         ctx.shadowBlur = style.shadowBlur;
         ctx.shadowOffsetX = 2;
         ctx.shadowOffsetY = 2;
-        
-        // Gestion du texte multi-lignes
+
         const lines = block.text.split('\n');
         const lineHeight = block.fontSize * 1.2;
-        const totalHeight = lines.length * lineHeight;
-        const startY = block.y - (totalHeight / 2) + (lineHeight / 2);
-        
+        const startY = block.y - (lines.length * lineHeight) / 2 + lineHeight / 2;
         lines.forEach((line, index) => {
-          const lineY = startY + (index * lineHeight);
-          
+          const lineY = startY + index * lineHeight;
           if (style.outline) {
             ctx.strokeStyle = style.outlineColor || '#000000';
             ctx.lineWidth = style.outlineWidth || 2;
@@ -641,32 +606,27 @@ export default function EditorWithImages() {
             ctx.miterLimit = 2;
             ctx.strokeText(line, block.x, lineY);
           }
-          
           ctx.fillText(line, block.x, lineY);
         });
-        
-          ctx.shadowColor = 'transparent';
-          ctx.shadowBlur = 0;
-        });
-        
-        // Dessiner le cadre blanc si activé (doit être au-dessus de tout sauf le texte ?)
-        // En fait, le cadre est généralement autour, donc on peut le dessiner à la fin
-        if (showFrame && frameWidth > 0) {
-        // Dessiner le cadre blanc autour de l'image de fond
-        ctx.fillStyle = '#ffffff';
-        // Bordure gauche
-        ctx.fillRect(0, 0, frameWidth, 600);
-          // Bordure droite
-          ctx.fillRect(canvasWidth - frameWidth, 0, frameWidth, 600);
-          // Bordure haut
-          ctx.fillRect(0, 0, canvasWidth, frameWidth);
-          // Bordure bas
-          ctx.fillRect(0, 600 - frameWidth, canvasWidth, frameWidth);
-        }
+        ctx.restore();
       });
+    } catch (error) {
+      console.warn('Rendu de carte incomplet :', error);
+    }
+  }, [aspectRatio, backgroundColor, frameWidth, imageElements, loadCanvasImage, selectedTheme.image, showCanvas, showFrame, textBlocks, textStyles]);
+
+  // Une image par animation : le déplacement reste fluide, même avec plusieurs photos.
+  useEffect(() => {
+    if (!showCanvas) return;
+    if (renderFrameRef.current) cancelAnimationFrame(renderFrameRef.current);
+    renderFrameRef.current = requestAnimationFrame(() => {
+      renderFrameRef.current = null;
+      void drawCard();
+    });
+    return () => {
+      if (renderFrameRef.current) cancelAnimationFrame(renderFrameRef.current);
     };
-    // img.src est déjà défini plus haut
-  }, [showCanvas, textBlocks, imageElements, selectedTheme.image, showFrame, frameWidth, stickerTint, aspectRatio]);
+  }, [drawCard, showCanvas]);
 
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     e.preventDefault();
@@ -727,7 +687,8 @@ export default function EditorWithImages() {
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const scaleX = 400 / rect.width;
+    const canvasWidth = aspectRatio === 'story' ? 338 : 400;
+    const scaleX = canvasWidth / rect.width;
     const scaleY = 600 / rect.height;
     const x = (e.clientX - rect.left) * scaleX;
     const y = (e.clientY - rect.top) * scaleY;
@@ -762,7 +723,8 @@ export default function EditorWithImages() {
     if (!canvas || e.touches.length !== 1) return;
 
     const rect = canvas.getBoundingClientRect();
-    const scaleX = 400 / rect.width;
+    const canvasWidth = aspectRatio === 'story' ? 338 : 400;
+    const scaleX = canvasWidth / rect.width;
     const scaleY = 600 / rect.height;
     const x = (e.touches[0].clientX - rect.left) * scaleX;
     const y = (e.touches[0].clientY - rect.top) * scaleY;
@@ -879,7 +841,8 @@ export default function EditorWithImages() {
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const scaleX = 400 / rect.width;
+    const canvasWidth = aspectRatio === 'story' ? 338 : 400;
+    const scaleX = canvasWidth / rect.width;
     const scaleY = 600 / rect.height;
     const x = (e.touches[0].clientX - rect.left) * scaleX;
     const y = (e.touches[0].clientY - rect.top) * scaleY;
@@ -943,30 +906,35 @@ export default function EditorWithImages() {
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const src = event.target?.result as string;
-      const newImage: ImageElement = {
-        id: Date.now().toString(),
+    const readFile = (file: File) => new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+
+    Promise.all(files.map(readFile)).then((sources) => {
+      const canvasWidth = aspectRatio === 'story' ? 338 : 400;
+      const newImages: ImageElement[] = sources.map((src, index) => ({
+        id: `photo-${Date.now()}-${index}`,
         src,
-        x: 150,
-        y: 150,
-        width: 100,
-        height: 100,
+        x: Math.max(20, canvasWidth / 2 - 60 + (index % 3) * 12),
+        y: Math.max(20, 180 + (index % 3) * 16),
+        width: 120,
+        height: 120,
         rotation: 0,
-      };
-      setImageElements([...imageElements, newImage]);
-      setSelectedImageId(newImage.id);
-    };
-    reader.readAsDataURL(file);
+        filter: 'none',
+      }));
+      setImageElements((current) => [...current, ...newImages]);
+      setSelectedImageId(newImages[0]?.id ?? null);
+      setSelectedBlockId('');
+      setCollageNotice(`${newImages.length} photo${newImages.length > 1 ? 's ajoutées' : ' ajoutée'} — ouvrez « Collage » pour les placer automatiquement.`);
+    }).catch(() => setCollageNotice('Une photo n’a pas pu être lue. Essayez un autre fichier.'));
 
-    // Réinitialiser l'input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const updateSelectedBlock = (updates: Partial<TextBlock>) => {
@@ -985,45 +953,60 @@ export default function EditorWithImages() {
     );
   };
 
-  const handleExport = () => {
-    console.log('Début de l\'export...');
-    if (!canvasRef.current) {
-      console.error('Canvas introuvable');
+  const addAssistantText = (text: string) => {
+    const base = selectedBlock;
+    const newBlock: TextBlock = {
+      id: `text-${Date.now()}`,
+      text,
+      x: base?.x ?? 200,
+      y: base ? Math.min(540, base.y + 80) : 300,
+      color: base?.color ?? '#ffffff',
+      fontSize: base?.fontSize ?? 28,
+      style: base?.style ?? 'modern',
+      align: base?.align ?? 'center',
+    };
+    setTextBlocks((blocks) => [...blocks, newBlock]);
+    setSelectedBlockId(newBlock.id);
+    setSelectedImageId(null);
+    setShowTextAssistant(false);
+  };
+
+  const insertAssistantText = (text: string) => {
+    if (!selectedBlockId) {
+      addAssistantText(text);
       return;
     }
-    
+    updateSelectedBlock({ text });
+    setShowTextAssistant(false);
+  };
+
+  const handleExport = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      alert('Le visuel est encore en cours de préparation. Réessayez dans un instant.');
+      return;
+    }
+
     setIsExporting(true);
-    
-    // Attendre un court instant pour s'assurer que le dernier rendu est terminé
-    setTimeout(() => {
-      try {
-        if (!canvasRef.current) return;
-        
-        // Utiliser toBlob au lieu de toDataURL pour une meilleure performance et compatibilité mobile
-        canvasRef.current.toBlob((blob) => {
-          if (!blob) {
-            console.error('Erreur de génération du Blob');
-            alert('Erreur: Impossible de générer l\'image.');
-            setIsExporting(false);
-            return;
-          }
-          
-          console.log('Blob généré, taille:', blob.size);
-          
-          // Créer une URL objet à partir du blob
-          const objectUrl = URL.createObjectURL(blob);
-          setPreviewUrl(objectUrl);
-          setPreviewBlob(blob); // Stocker le blob pour usage ultérieur
-          setShowPreview(true);
-          setIsExporting(false);
-        }, 'image/png', 1.0);
-        
-      } catch (error) {
-        console.error('Erreur lors de l\'export:', error);
-        alert('Une erreur est survenue lors de l\'export.');
-        setIsExporting(false);
-      }
-    }, 100);
+    try {
+      // Attend le rendu actuel au lieu de dépendre d’un délai arbitraire.
+      await drawCard();
+      const renderedCanvas = canvasRef.current;
+      if (!renderedCanvas) throw new Error('Canvas introuvable');
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        renderedCanvas.toBlob((value) => value ? resolve(value) : reject(new Error('PNG indisponible')), 'image/png', 1.0);
+      });
+
+      if (previewUrl.startsWith('blob:')) URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(URL.createObjectURL(blob));
+      setPreviewBlob(blob);
+      setShowPreview(true);
+    } catch (error) {
+      console.error('Erreur lors de l’export :', error);
+      alert('Impossible de générer l’image. Réessayez dans un instant.');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleDownload = async () => {
@@ -1129,7 +1112,7 @@ export default function EditorWithImages() {
       <header className="py-4 px-4 border-b border-gray-800 flex items-center justify-between">
         <Link href="/">
           <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2">
-            <img src="/logo-innovboulon.jpg" alt="Innov'BOULON" className="h-10 w-10 rounded-full" />
+            <img src="/manus-storage/logo-innovboulon_db9c0ffd.jpg" alt="Innov'BOULON" className="h-10 w-10 rounded-full" />
             ← Retour
           </button>
         </Link>
@@ -1294,6 +1277,14 @@ export default function EditorWithImages() {
                 </a>
                 
                 <Button
+                  onClick={handleShare}
+                  variant="secondary"
+                  size="sm"
+                  className="w-full bg-emerald-600 hover:bg-emerald-700"
+                >
+                  📤 Partager l’image
+                </Button>
+                <Button
                   onClick={() => {
                     const subject = encodeURIComponent("Ma carte de vœux personnalisée");
                     const body = encodeURIComponent("Bonjour,\n\nJe t'envoie cette carte de vœux que j'ai créée spécialement pour toi !\n\n(N'oublie pas de joindre l'image que tu as téléchargée)\n\nJoyeuses fêtes !");
@@ -1328,7 +1319,7 @@ export default function EditorWithImages() {
       )}
 
       {/* Contenu principal */}
-      <main className="py-8">
+      <main className={showCanvas ? "py-5 pb-28 lg:py-8 lg:pb-8" : "py-8"}>
         {!showCanvas ? (
           <>
             <div className="text-center mb-8">
@@ -1362,7 +1353,7 @@ export default function EditorWithImages() {
             <div className="max-w-6xl mx-auto px-2 md:px-4">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-6">
                 {/* Carte */}
-                <div className="lg:col-span-2 order-2 lg:order-1">
+                <div className="lg:col-span-2 order-1">
                   <div className="bg-gray-800 rounded-lg p-4 flex items-center justify-center relative overflow-hidden">
                     {/* Magic Dust Animation Overlay */}
                     {showMagicDust && (
@@ -1408,6 +1399,7 @@ export default function EditorWithImages() {
                 onTouchStart={handleCanvasTouchStart}
                 onTouchMove={handleCanvasTouchMove}
                 onTouchEnd={() => setIsDragging(false)}
+                onTouchCancel={() => setIsDragging(false)}
               />
                     </div>
                   </div>
@@ -1417,7 +1409,7 @@ export default function EditorWithImages() {
                 </div>
 
                 {/* Panneau de contrôle */}
-                <div className="space-y-3 md:space-y-4 overflow-y-auto max-h-[80vh] order-1 lg:order-2">
+                <div className="hidden lg:block space-y-3 md:space-y-4 overflow-y-auto max-h-[80vh] lg:order-2">
                   {/* Upload d'images */}
                   <div className="bg-gray-800 rounded-lg p-4 space-y-3">
                     <div className="flex justify-between items-center">
@@ -1535,10 +1527,12 @@ export default function EditorWithImages() {
                         )}
                       </div>
                     </div>
+                    <p className="text-xs leading-relaxed text-gray-400">{collageNotice}</p>
                     <input
                       ref={fileInputRef}
                       type="file"
                       accept="image/*"
+                      multiple
                       onChange={handleImageUpload}
                       className="hidden"
                     />
@@ -1755,13 +1749,13 @@ export default function EditorWithImages() {
                         <div className="flex justify-between items-center">
                           <h3 className="text-lg font-bold">Texte</h3>
                           <Button
-                            onClick={generateMagicText}
+                            onClick={() => setShowTextAssistant(true)}
                             size="sm"
                             className="bg-purple-600 hover:bg-purple-700 text-xs"
-                            title="Générer un texte aléatoire"
+                            title="Ouvrir l’assistant de texte"
                           >
                             <Wand2 className="w-3 h-3 mr-1" />
-                            Inspiration
+                            Assistant
                           </Button>
                         </div>
                         <textarea
@@ -2048,7 +2042,7 @@ export default function EditorWithImages() {
               </div>
             </div>
 
-            <div className="text-center mt-6 md:mt-10 flex flex-col sm:flex-row gap-2 md:gap-4 justify-center">
+            <div className="hidden lg:flex text-center mt-6 md:mt-10 flex-col sm:flex-row gap-2 md:gap-4 justify-center">
               <Button
                 onClick={handleExport}
                 disabled={isExporting}
@@ -2129,6 +2123,161 @@ export default function EditorWithImages() {
           </>
         )}
       </main>
+
+      <TextAssistantDialog
+        open={showTextAssistant}
+        themeId={selectedThemeId}
+        canReplace={Boolean(selectedBlock)}
+        onClose={() => setShowTextAssistant(false)}
+        onInsert={insertAssistantText}
+        onAdd={addAssistantText}
+      />
+
+      {showCanvas && (
+        <>
+          {/* Barre d’actions fixe : le geste de création reste à portée de pouce. */}
+          <nav className={`lg:hidden fixed inset-x-0 bottom-0 z-50 border-t border-slate-700 bg-slate-950/95 px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur ${mobileTool ? 'pointer-events-none opacity-0' : ''}`} aria-label="Actions de création">
+            <div className="mx-auto grid max-w-md grid-cols-4 gap-1">
+              {[
+                { id: 'text', label: 'Texte', icon: Type },
+                { id: 'photo', label: 'Photo', icon: ImagePlus },
+                { id: 'style', label: 'Style', icon: SlidersHorizontal },
+                { id: 'share', label: 'Finaliser', icon: Send },
+              ].map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setMobileTool(id as 'text' | 'photo' | 'style' | 'share')}
+                  className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl text-xs font-semibold text-slate-200 transition active:scale-95 hover:bg-white/10"
+                >
+                  <Icon size={20} />
+                  {label}
+                </button>
+              ))}
+            </div>
+          </nav>
+
+          {mobileTool && (
+            <section className="lg:hidden fixed inset-x-0 bottom-0 z-[60] max-h-[68dvh] overflow-y-auto rounded-t-3xl border-t border-slate-600 bg-slate-900 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-16px_50px_rgba(0,0,0,0.45)]" role="dialog" aria-modal="true" aria-label="Outils rapides">
+              <div className="mx-auto max-w-md">
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-amber-300">Modification rapide</p>
+                    <h3 className="text-lg font-bold">
+                      {mobileTool === 'text' && 'Votre message'}
+                      {mobileTool === 'photo' && 'Photos & collage'}
+                      {mobileTool === 'style' && 'Style de la carte'}
+                      {mobileTool === 'share' && 'Finaliser votre carte'}
+                    </h3>
+                  </div>
+                  <button onClick={() => setMobileTool(null)} aria-label="Fermer les outils" className="rounded-full p-2 text-slate-300 hover:bg-white/10"><X size={22} /></button>
+                </div>
+
+                {mobileTool === 'text' && (
+                  <div className="space-y-3">
+                    <button onClick={() => setShowTextAssistant(true)} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-purple-600 font-bold text-white active:scale-[0.98]"><Wand2 size={19} /> Assistant de texte</button>
+                    <p className="-mt-1 text-center text-xs text-slate-400">3 messages personnalisés, créés sur votre appareil.</p>
+                    {selectedBlock ? (
+                      <>
+                        <textarea
+                          value={selectedBlock.text}
+                          onChange={(event) => updateSelectedBlock({ text: event.target.value })}
+                          className="h-24 w-full resize-none rounded-2xl border border-slate-600 bg-slate-800 p-3 text-base text-white outline-none focus:border-amber-400"
+                          placeholder="Écrivez votre message…"
+                        />
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { align: 'left', label: 'Gauche', icon: AlignLeft },
+                            { align: 'center', label: 'Centrer', icon: AlignCenter },
+                            { align: 'right', label: 'Droite', icon: AlignRight },
+                          ].map(({ align, label, icon: Icon }) => (
+                            <button key={align} onClick={() => updateSelectedBlock({ align: align as TextBlock['align'] })} className={`min-h-11 rounded-xl border text-xs font-semibold ${selectedBlock.align === align ? 'border-amber-400 bg-amber-400/15 text-amber-200' : 'border-slate-600 bg-slate-800 text-slate-200'}`}>
+                              <Icon size={18} className="mx-auto mb-1" />{label}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="flex items-center justify-between gap-2 rounded-2xl bg-slate-800 p-2">
+                          <span className="pl-2 text-sm text-slate-300">Taille</span>
+                          <div className="flex gap-2">
+                            <button onClick={() => updateSelectedBlock({ fontSize: Math.max(18, selectedBlock.fontSize - 4) })} className="min-h-10 min-w-10 rounded-xl bg-slate-700 text-lg font-bold active:scale-95">A−</button>
+                            <span className="flex min-w-12 items-center justify-center text-sm font-semibold">{selectedBlock.fontSize}</span>
+                            <button onClick={() => updateSelectedBlock({ fontSize: Math.min(96, selectedBlock.fontSize + 4) })} className="min-h-10 min-w-10 rounded-xl bg-slate-700 text-lg font-bold active:scale-95">A+</button>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="rounded-2xl bg-slate-800 p-4 text-sm text-slate-300">Touchez un bloc de texte sur la carte pour le modifier.</p>
+                    )}
+                    <button onClick={handleAddTextBlock} className="min-h-12 w-full rounded-2xl bg-emerald-600 font-bold text-white active:scale-[0.98]">+ Ajouter un texte</button>
+                  </div>
+                )}
+
+                {mobileTool === 'photo' && (
+                  <div className="space-y-3">
+                    <button onClick={() => fileInputRef.current?.click()} className="flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 font-bold text-white active:scale-[0.98]"><Upload size={20} /> Ajouter une ou plusieurs photos</button>
+                    <div className="grid grid-cols-4 gap-2">
+                      {[1, 2, 3, 4].map((count) => {
+                        const available = photoCount >= count;
+                        return (
+                          <button key={count} disabled={!available} onClick={() => { applyCollageLayout(count); setMobileTool(null); }} className={`min-h-16 rounded-2xl border text-sm font-semibold ${available ? 'border-slate-600 bg-slate-800 active:scale-95' : 'cursor-not-allowed border-slate-700 bg-slate-800/40 text-slate-500'}`}>
+                            <LayoutGrid size={20} className={`mx-auto mb-1 ${available ? 'text-amber-300' : 'text-slate-600'}`} />{count} photo{count > 1 ? 's' : ''}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p role="status" className="rounded-xl bg-slate-800 p-3 text-xs leading-relaxed text-slate-300">{photoCount === 0 ? 'Ajoutez une photo pour déverrouiller les dispositions.' : collageNotice}</p>
+                    {selectedImage && (
+                      <div className="flex items-center justify-between rounded-2xl bg-slate-800 p-3">
+                        <span className="text-sm text-slate-300">Photo sélectionnée</span>
+                        <div className="flex gap-2">
+                          <button onClick={() => updateSelectedImage({ width: Math.max(50, selectedImage.width - 20), height: Math.max(50, selectedImage.height - 20) })} className="h-10 w-10 rounded-xl bg-slate-700 font-bold">−</button>
+                          <button onClick={() => updateSelectedImage({ width: Math.min(400, selectedImage.width + 20), height: Math.min(400, selectedImage.height + 20) })} className="h-10 w-10 rounded-xl bg-slate-700 font-bold">+</button>
+                          <button onClick={() => handleDeleteImage(selectedImage.id)} className="h-10 rounded-xl bg-red-500/15 px-3 text-sm font-semibold text-red-300">Supprimer</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {mobileTool === 'style' && (
+                  <div className="space-y-4">
+                    <div>
+                      <p className="mb-2 text-sm font-semibold text-slate-200">Format</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button onClick={() => setAspectRatio('standard')} className={`min-h-12 rounded-2xl border font-semibold ${aspectRatio === 'standard' ? 'border-amber-400 bg-amber-400/15 text-amber-200' : 'border-slate-600 bg-slate-800'}`}><Monitor size={17} className="mr-1 inline" />Carte</button>
+                        <button onClick={() => setAspectRatio('story')} className={`min-h-12 rounded-2xl border font-semibold ${aspectRatio === 'story' ? 'border-amber-400 bg-amber-400/15 text-amber-200' : 'border-slate-600 bg-slate-800'}`}><Smartphone size={17} className="mr-1 inline" />Story</button>
+                      </div>
+                    </div>
+                    {selectedBlock && (
+                      <div>
+                        <p className="mb-2 text-sm font-semibold text-slate-200">Couleur du texte</p>
+                        <div className="flex gap-3">
+                          {['#ffffff', '#000000', '#fbbf24', '#f87171', '#60a5fa'].map((color) => (
+                            <button key={color} onClick={() => updateSelectedBlock({ color })} aria-label={`Choisir ${color}`} className={`h-9 w-9 rounded-full border-2 ${selectedBlock.color === color ? 'border-white ring-2 ring-amber-400' : 'border-slate-500'}`} style={{ backgroundColor: color }} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <button onClick={() => { if (!showFrame && frameWidth === 0) setFrameWidth(12); setShowFrame((visible) => !visible); }} aria-pressed={showFrame} className={`min-h-12 w-full rounded-2xl border font-semibold ${showFrame ? 'border-amber-400 bg-amber-400/15 text-amber-200' : 'border-slate-600 bg-slate-800'}`}>▣ {showFrame ? 'Retirer le cadre blanc' : 'Ajouter un cadre blanc'}</button>
+                    {showFrame && (
+                      <label className="block rounded-2xl bg-slate-800 p-3 text-sm font-semibold text-slate-200">Épaisseur : {frameWidth}px
+                        <input type="range" min="4" max="40" value={frameWidth} onChange={(event) => setFrameWidth(Number(event.target.value))} className="mt-2 w-full" />
+                      </label>
+                    )}
+                  </div>
+                )}
+
+                {mobileTool === 'share' && (
+                  <div className="space-y-3">
+                    <p className="rounded-2xl bg-slate-800 p-4 text-sm leading-relaxed text-slate-300">Votre création est prête. Ouvrez l’aperçu pour l’enregistrer, l’envoyer ou la partager depuis votre smartphone.</p>
+                    <button onClick={() => { handleExport(); setMobileTool(null); }} disabled={isExporting} className="min-h-14 w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-cyan-500 font-bold text-slate-950 disabled:opacity-60">{isExporting ? 'Préparation…' : 'Prévisualiser et télécharger'}</button>
+                    <button onClick={() => { setShowCanvas(false); setMobileTool(null); }} className="min-h-12 w-full rounded-2xl border border-slate-600 bg-slate-800 font-semibold">Changer de fond</button>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+        </>
+      )}
     </div>
   );
 }
