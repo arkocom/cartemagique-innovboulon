@@ -35,7 +35,7 @@ export default function ThemeSelectorComplete() {
               onClick={() => setActiveCategory(cat)}
               className={`whitespace-nowrap font-medium pb-2 px-2 border-b-2 transition-colors ${
                 isActive
-                  ? 'text-white border-amber-400'
+                  ? 'text-foreground border-amber-400'
                   : 'text-gray-500 hover:text-gray-300 border-transparent'
               }`}
             >
@@ -50,7 +50,10 @@ export default function ThemeSelectorComplete() {
         {filteredThemes.map((theme) => {
           const isSelected = selectedThemeId === theme.id;
           return (
-            <div
+            <button
+              type="button"
+              aria-label={`Choisir ${theme.name} — ${theme.description}`}
+              aria-pressed={isSelected}
               key={theme.id}
               onClick={() => setSelectedThemeId(theme.id)}
               className={`cursor-pointer group rounded-xl overflow-hidden border-2 transition-all ${
@@ -76,10 +79,11 @@ export default function ThemeSelectorComplete() {
               <div className="p-2 text-center">
                 <p className="text-xs text-gray-300 truncate">{theme.name}</p>
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
     </div>
   );
 }
+

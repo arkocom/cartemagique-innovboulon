@@ -1,3 +1,4 @@
+import ThemeToggle from "@/components/ThemeToggle";
 import { Link } from "wouter";
 import { useEffect, useState } from "react";
 import { Download, MonitorDown, Smartphone, X } from "lucide-react";
@@ -63,6 +64,7 @@ export default function Landing() {
         <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-green-500/10 rounded-full blur-[120px]" />
       </div>
 
+      <div className="absolute top-5 right-5 sm:top-8 sm:right-8 z-20"><ThemeToggle /></div>
       <div className="absolute top-5 left-5 sm:top-8 sm:left-8 z-20">
         <img src="/pwa-192.png" alt="Innov'BOULON" className="h-12 w-12 sm:h-16 sm:w-16 rounded-full shadow-lg" />
       </div>
@@ -128,3 +130,4 @@ export default function Landing() {
     </div>
   );
 }
+

@@ -7,6 +7,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import Landing from "./pages/Landing";
 import EditorWithImages from "./pages/EditorWithImages";
 import HelpModal from "@/components/HelpModal";
+import { ThemeProvider } from './contexts/ThemeContext';
 
 const UPDATE_READY_EVENT = "cartemagique:update-ready";
 
@@ -69,7 +70,8 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
-      <div className="dark">
+      <ThemeProvider>
+      <div className="app-shell">
         <TooltipProvider>
           <Toaster />
           <ServiceWorkerUpdateNotice />
@@ -77,6 +79,7 @@ function App() {
           <HelpModal />
         </TooltipProvider>
       </div>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }
