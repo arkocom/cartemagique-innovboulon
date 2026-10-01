@@ -1,4 +1,7 @@
-import SupportAssociation from "@/components/SupportAssociation";
+import "./Landing.css";
+import { galleryThemes } from "@/lib/themes";
+import { useAppStore } from "@/stores/appStore";
+import { useTheme } from "@/contexts/ThemeContext";
 import ThemeToggle from "@/components/ThemeToggle";
 import { Link } from "wouter";
 import { useEffect, useState } from "react";
@@ -10,7 +13,24 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export default function Landing() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const { theme } = useTheme();
+  const setSelectedThemeId = useAppStore((state) => state.setSelectedThemeId);
+  const [previewIndex, setPreviewIndex] = useState(0);
+  const featured = [
+    "noel-3",
+    "noel-4",
+    "noel-5",
+    "nouvel-an-4",
+    "feerie-2",
+    "nature-4",
+    "famille-1",
+    "pro-7",
+  ]
+    .map((id) => galleryThemes.find((item) => item.id === id))
+    .filter((item): item is NonNullable<typeof item> => Boolean(item));
+  const heroCard = featured[previewIndex % featured.length];
+  const [deferredPrompt, setDeferredPrompt] =
+    useState<BeforeInstallPromptEvent | null>(null);
   const [isStandalone, setIsStandalone] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [showInstallHelp, setShowInstallHelp] = useState(false);
@@ -18,8 +38,12 @@ export default function Landing() {
   useEffect(() => {
     const displayMode = window.matchMedia("(display-mode: standalone)");
     const updateDisplayMode = () => {
-      const navigatorWithStandalone = navigator as Navigator & { standalone?: boolean };
-      setIsStandalone(displayMode.matches || navigatorWithStandalone.standalone === true);
+      const navigatorWithStandalone = navigator as Navigator & {
+        standalone?: boolean;
+      };
+      setIsStandalone(
+        displayMode.matches || navigatorWithStandalone.standalone === true,
+      );
     };
 
     setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent));
@@ -40,7 +64,10 @@ export default function Landing() {
     displayMode.addEventListener("change", updateDisplayMode);
 
     return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener(
+        "beforeinstallprompt",
+        handleBeforeInstallPrompt,
+      );
       window.removeEventListener("appinstalled", handleAppInstalled);
       displayMode.removeEventListener("change", updateDisplayMode);
     };
@@ -51,7 +78,6 @@ export default function Landing() {
       setShowInstallHelp(true);
       return;
     }
-
     await deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
     setDeferredPrompt(null);
@@ -59,77 +85,358 @@ export default function Landing() {
   };
 
   return (
-    <div className="landing-page min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white px-4 pt-28 pb-8 relative overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-red-500/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-green-500/10 rounded-full blur-[120px]" />
-      </div>
-
-      <div className="absolute top-5 right-5 sm:top-8 sm:right-8 z-20"><ThemeToggle /></div>
-      <div className="absolute top-5 left-5 sm:top-8 sm:left-8 z-20">
-        <img src="/pwa-192.png" alt="Innov'BOULON" className="h-12 w-12 sm:h-16 sm:w-16 rounded-full shadow-lg" />
-      </div>
-
-      <main className="z-10 text-center max-w-2xl animate-fade-in px-2">
-        <p className="inline-flex items-center gap-2 rounded-full bg-white/8 px-3 py-1 text-sm font-semibold tracking-wide text-slate-300 border border-white/10 mb-5">
-          <Smartphone size={14} /> Créateur de cartes, partout avec vous
-        </p>
-        <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-4 font-serif landing-title">
-          Joyeux Noël
-        </h1>
-        <p className="text-lg sm:text-xl text-gray-300 mb-2">de la part de…</p>
-        <p className="text-base sm:text-lg text-gray-400 mb-8 sm:mb-10">
-          Créez une carte unique pour célébrer la fin de l&apos;année.
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center w-full sm:w-auto">
-          <Link
-            href="/editor"
-            className="min-h-12 px-7 py-3.5 landing-create text-white font-bold rounded-full shadow-lg transition-transform duration-150 hover:scale-[1.03] active:scale-[0.97] flex items-center justify-center"
-          >
+    <div className="magic-landing" data-ui-theme={theme}>
+      <nav className="nav" aria-label="Navigation principale">
+        <Link href="/" className="brand">
+          <img src="/pwa-192.png" alt="" className="brand-logo" />
+          <span className="brand-name">
+            CarteMagique<span>Innov’BOULON</span>
+          </span>
+        </Link>
+        <div className="nav-links">
+          <a href="#comment">Comment ça marche</a>
+          <a href="#modeles">Modèles</a>
+          <a href="#soutien">Soutien</a>
+          <ThemeToggle />
+          <Link href="/editor" className="btn btn-primary btn-sm">
             ✨ Créer ma carte
           </Link>
-
-          {!isStandalone && (
-            <button
-              onClick={handleInstallClick}
-              className="min-h-12 px-7 py-3.5 landing-install bg-slate-800/95 border border-slate-600 text-white font-bold rounded-full shadow-lg transition-all duration-150 hover:bg-slate-700 active:scale-[0.97] flex items-center justify-center gap-2"
-            >
-              <Download size={19} /> Installer l&apos;app
-            </button>
-          )}
         </div>
-
-        {isStandalone && (
-          <p className="mt-5 text-sm landing-status">✓ Application installée · les mises à jour sont automatiques</p>
-        )}
-        <SupportAssociation />
-      </main>
-
-      <footer className="mt-8 z-20 text-center px-4">
-        <p className="text-sm text-gray-400">
-          Offert par <a href="https://innov-boulon.fr" target="_blank" rel="noopener noreferrer" className="landing-link font-bold transition-colors">Innov&apos;BOULON</a> • Développé par <span className="font-bold text-white">Manus</span>
-        </p>
-      </footer>
-
-      {showInstallHelp && (
-        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm p-4 flex items-end sm:items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="install-title">
-          <section className="w-full max-w-md rounded-3xl bg-slate-800 border border-slate-600 shadow-2xl p-6 text-left relative">
-            <button onClick={() => setShowInstallHelp(false)} aria-label="Fermer" className="absolute right-4 top-4 rounded-full p-2 text-slate-300 hover:bg-white/10">
-              <X size={20} />
-            </button>
-            <div className="h-11 w-11 rounded-2xl bg-amber-400/15 text-amber-300 flex items-center justify-center mb-4"><MonitorDown size={22} /></div>
-            <h2 id="install-title" className="text-xl font-bold pr-8">Installer CarteMagique</h2>
-            {isIOS ? (
-              <p className="mt-3 text-slate-300 leading-relaxed">Dans Safari, touchez <strong>Partager</strong>, puis <strong>Sur l&apos;écran d&apos;accueil</strong> et enfin <strong>Ajouter</strong>.</p>
+      </nav>
+      <main>
+        <header className="hero">
+          <div className="hero-grid">
+            <div>
+              <div className="badges">
+                <span className="badge">
+                  <i />
+                  {galleryThemes.length} modèles de fonds
+                </span>
+                <span className="badge gold">
+                  <i />
+                  100 % gratuit
+                </span>
+                <span className="badge purple">
+                  <i />
+                  Sans inscription
+                </span>
+              </div>
+              <h1>
+                Des cartes de fêtes{" "}
+                <span className="grad">qui font sourire</span>, en quelques
+                secondes.
+              </h1>
+              <p className="lead">
+                Noël, Nouvel An, anniversaire ou juste un merci. Choisissez un
+                vrai fond, ajoutez votre message et vos photos. Offrez une carte
+                statique ou une vidéo animée avec musique et effets.
+              </p>
+              <div className="hero-cta">
+                <Link href="/editor" className="btn btn-primary">
+                  ✨ Créer ma carte maintenant
+                </Link>
+                <a href="#modeles" className="btn btn-ghost">
+                  Voir les modèles
+                </a>
+              </div>
+              <div className="hero-trust">
+                <img
+                  src="/pwa-192.png"
+                  alt="Logo Innov’BOULON"
+                  width="36"
+                  height="36"
+                />
+                <span>
+                  Offert par l’association <strong>Innov’BOULON</strong>
+                  <br />
+                  L’IA et le numérique accessibles à tous.
+                </span>
+              </div>
+            </div>
+            <div className="hero-visual">
+              <div className="blob" aria-hidden="true" />
+              <Link
+                href="/editor"
+                onClick={() => setSelectedThemeId(heroCard.id)}
+                className="mock-card"
+                aria-label={`Créer une carte avec ${heroCard.name}`}
+              >
+                <img
+                  src={heroCard.image}
+                  alt={heroCard.description}
+                  className="real-background"
+                  fetchPriority="high"
+                />
+                <div className="mock-inner">
+                  <span className="top">CarteMagique · {heroCard.name}</span>
+                  <div
+                    className={`msg ${heroCard.id === "noel-3" ? "ink-message" : ""}`}
+                  >
+                    Un peu de magie,
+                    <br />
+                    beaucoup de bonheur ✨
+                  </div>
+                  <span className="from">
+                    De tout cœur,
+                    <br />
+                    l’équipe Innov’BOULON
+                  </span>
+                </div>
+              </Link>
+              <div className="float-chip fc1">
+                <span className="ic">🎨</span>
+                <div>
+                  {galleryThemes.length} vrais fonds
+                  <small>Noël · Nouvel An · Nature…</small>
+                </div>
+              </div>
+              <div className="float-chip fc2">
+                <span className="ic">🎵</span>
+                <div>
+                  Statique ou animée<small>Votre message, votre ambiance</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            className="hero-choices"
+            aria-label="Changer le fond de démonstration"
+          >
+            {featured.slice(0, 3).map((item, index) => (
+              <button
+                key={item.id}
+                type="button"
+                aria-pressed={previewIndex === index}
+                aria-label={`Afficher ${item.name}`}
+                onClick={() => setPreviewIndex(index)}
+              >
+                <img src={item.preview} alt="" />
+                <span>{item.name}</span>
+              </button>
+            ))}
+          </div>
+        </header>
+        <div
+          className="marquee"
+          aria-label="Des cartes pour toutes les occasions"
+        >
+          <div className="occasion-strip">
+            {[
+              "Noël",
+              "Nouvel An",
+              "Anniversaire",
+              "Merci",
+              "Musique & effets",
+              "Innov’BOULON",
+            ].map((label) => (
+              <span key={label}>
+                {label}
+                <b aria-hidden="true">✦</b>
+              </span>
+            ))}
+          </div>
+        </div>
+        <section className="section" id="comment">
+          <div className="wrap">
+            <span className="kicker">Comment ça marche</span>
+            <h2 className="sec-title">
+              De l’idée à la carte partagée, en trois gestes.
+            </h2>
+            <div className="steps">
+              {[
+                [
+                  "01",
+                  "Choisissez votre fond",
+                  `Découvrez ${galleryThemes.length} fonds de l’application. Sélectionnez celui qui vous plaît, puis ouvrez la personnalisation.`,
+                ],
+                [
+                  "02",
+                  "Ajoutez votre touche personnelle",
+                  "Écrivez votre message, ajoutez vos photos et des émoticônes. Choisissez une image statique ou une carte animée avec une ambiance musicale et des effets.",
+                ],
+                [
+                  "03",
+                  "Téléchargez et partagez",
+                  "Enregistrez votre PNG ou votre vidéo. Utilisez le partage de votre appareil lorsqu’il est disponible, ou joignez le fichier dans votre messagerie.",
+                ],
+              ].map(([number, title, text]) => (
+                <article className="step" key={number}>
+                  <span className="tag">Étape {number}</span>
+                  <div className="num">{number}</div>
+                  <h3>{title}</h3>
+                  <p>{text}</p>
+                </article>
+              ))}
+            </div>
+            <div className="stats">
+              <div className="stat">
+                <b>{galleryThemes.length}</b>
+                <span>fonds à découvrir</span>
+              </div>
+              <div className="stat">
+                <b>9</b>
+                <span>ambiances musicales</span>
+              </div>
+              <div className="stat">
+                <b>0 €</b>
+                <span>gratuit, sans compte</span>
+              </div>
+              <div className="stat">
+                <b>2 formats</b>
+                <span>image ou vidéo</span>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section className="section gallery-section" id="modeles">
+          <div className="wrap">
+            <div className="gallery-head">
+              <div>
+                <span className="kicker">Les vrais modèles</span>
+                <h2 className="sec-title">Un fond pour chaque attention.</h2>
+                <p className="sec-sub">
+                  Ces visuels sont ceux de l’application. Choisissez votre
+                  préféré pour commencer.
+                </p>
+              </div>
+              <Link href="/editor" className="btn btn-primary">
+                Tous les modèles →
+              </Link>
+            </div>
+            <div className="tpl-grid">
+              {featured.map((item) => (
+                <Link
+                  key={item.id}
+                  href="/editor"
+                  onClick={() => setSelectedThemeId(item.id)}
+                  className="tpl"
+                  aria-label={`Choisir ${item.name} — ${item.description}`}
+                >
+                  <img
+                    src={item.preview}
+                    alt={item.description}
+                    loading="lazy"
+                    className="real-background"
+                  />
+                  <span className="name">
+                    {item.name} · {item.description}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+        <section className="section" id="installer">
+          <div className="wrap install-section">
+            <div>
+              <span className="kicker">Toujours à portée de main</span>
+              <h2 className="sec-title">
+                Votre petit atelier de cartes, sur smartphone.
+              </h2>
+              <p className="sec-sub">
+                Créez depuis votre navigateur ou ajoutez CarteMagique à votre
+                écran d’accueil.
+              </p>
+            </div>
+            {isStandalone ? (
+              <p className="installed-status">✓ Application installée</p>
             ) : (
-              <p className="mt-3 text-slate-300 leading-relaxed">Dans Chrome, ouvrez le menu <strong>⋮</strong>, puis choisissez <strong>Installer l&apos;application</strong> ou <strong>Ajouter à l&apos;écran d&apos;accueil</strong>.</p>
+              <button
+                type="button"
+                onClick={handleInstallClick}
+                className="btn btn-primary"
+              >
+                <Download size={19} /> Installer l’application
+              </button>
             )}
-            <p className="mt-4 rounded-xl bg-slate-900/70 p-3 text-sm text-slate-400">Si l&apos;application installée affiche une page blanche, supprimez son ancienne icône puis installez-la de nouveau depuis ce site publié.</p>
+          </div>
+        </section>
+        <section className="section" id="soutien">
+          <div className="wrap">
+            <div className="support-card">
+              <div>
+                <span className="kicker">Soutenir l’association</span>
+                <h2>Un petit geste pour continuer à créer des sourires.</h2>
+                <p>
+                  Innov’BOULON crée et fait découvrir des applications ludiques
+                  et accessibles à tous. Votre soutien nous aide à poursuivre
+                  cette aventure associative.
+                </p>
+                <div className="support-perks">
+                  <div>
+                    <b>Libre</b>vous choisissez le montant
+                  </div>
+                  <div>
+                    <b>Facultatif</b>CarteMagique reste gratuite
+                  </div>
+                </div>
+              </div>
+              <div className="support-cta">
+                <a
+                  className="btn btn-heart"
+                  href="https://www.helloasso.com/associations/innov-boulon/formulaires/2"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  ❤️ Faire un petit geste
+                </a>
+                <span className="note">
+                  Sur HelloAsso · S’ouvre dans un nouvel onglet
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+      <footer className="landing-footer">
+        <Link href="/" className="brand">
+          <img className="brand-logo" src="/pwa-192.png" alt="" />
+          <span className="brand-name">
+            CarteMagique<span>Une application Innov’BOULON</span>
+          </span>
+        </Link>
+        <a
+          href="https://innov-boulon.fr"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Découvrir l’association ↗
+        </a>
+        <span>Créons de belles attentions, ensemble.</span>
+      </footer>
+      {showInstallHelp && (
+        <div
+          className="install-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="install-title"
+        >
+          <section className="install-dialog">
+            <button
+              type="button"
+              onClick={() => setShowInstallHelp(false)}
+              aria-label="Fermer"
+              className="close-install"
+            >
+              <X size={22} />
+            </button>
+            <MonitorDown size={32} />
+            <h2 id="install-title">Installer CarteMagique</h2>
+            <p>
+              {isIOS
+                ? "Dans Safari, touchez Partager, puis Sur l’écran d’accueil et Ajouter."
+                : "Dans le menu de votre navigateur, choisissez Installer l’application ou Ajouter à l’écran d’accueil, si cette option est proposée."}
+            </p>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => setShowInstallHelp(false)}
+            >
+              Compris
+            </button>
           </section>
         </div>
       )}
     </div>
   );
 }
-
