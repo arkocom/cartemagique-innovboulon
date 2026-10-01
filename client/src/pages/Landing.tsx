@@ -58,7 +58,7 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white p-4 relative overflow-hidden">
+    <div className="landing-page min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white p-4 relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-red-500/10 rounded-full blur-[120px]" />
         <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-green-500/10 rounded-full blur-[120px]" />
@@ -70,10 +70,10 @@ export default function Landing() {
       </div>
 
       <main className="z-10 text-center max-w-2xl animate-fade-in px-2">
-        <p className="inline-flex items-center gap-2 rounded-full bg-white/8 px-3 py-1 text-xs font-semibold tracking-wide text-slate-300 border border-white/10 mb-5">
+        <p className="inline-flex items-center gap-2 rounded-full bg-white/8 px-3 py-1 text-sm font-semibold tracking-wide text-slate-300 border border-white/10 mb-5">
           <Smartphone size={14} /> Créateur de cartes, partout avec vous
         </p>
-        <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-4 font-serif bg-gradient-to-r from-white via-amber-300 to-red-500 bg-clip-text text-transparent">
+        <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-4 font-serif landing-title">
           Joyeux Noël
         </h1>
         <p className="text-lg sm:text-xl text-gray-300 mb-2">de la part de…</p>
@@ -84,7 +84,7 @@ export default function Landing() {
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center w-full sm:w-auto">
           <Link
             href="/editor"
-            className="min-h-12 px-7 py-3.5 bg-gradient-to-r from-red-600 to-amber-500 text-white font-bold rounded-full shadow-lg transition-transform duration-150 hover:scale-[1.03] active:scale-[0.97] flex items-center justify-center"
+            className="min-h-12 px-7 py-3.5 landing-create text-white font-bold rounded-full shadow-lg transition-transform duration-150 hover:scale-[1.03] active:scale-[0.97] flex items-center justify-center"
           >
             ✨ Créer ma carte
           </Link>
@@ -92,7 +92,7 @@ export default function Landing() {
           {!isStandalone && (
             <button
               onClick={handleInstallClick}
-              className="min-h-12 px-7 py-3.5 bg-slate-800/95 border border-slate-600 text-white font-bold rounded-full shadow-lg transition-all duration-150 hover:bg-slate-700 active:scale-[0.97] flex items-center justify-center gap-2"
+              className="min-h-12 px-7 py-3.5 landing-install bg-slate-800/95 border border-slate-600 text-white font-bold rounded-full shadow-lg transition-all duration-150 hover:bg-slate-700 active:scale-[0.97] flex items-center justify-center gap-2"
             >
               <Download size={19} /> Installer l&apos;app
             </button>
@@ -100,13 +100,13 @@ export default function Landing() {
         </div>
 
         {isStandalone && (
-          <p className="mt-5 text-sm text-emerald-300">✓ Application installée · les mises à jour sont automatiques</p>
+          <p className="mt-5 text-sm landing-status">✓ Application installée · les mises à jour sont automatiques</p>
         )}
       </main>
 
       <footer className="absolute bottom-5 sm:bottom-8 z-20 text-center px-4">
-        <p className="text-xs sm:text-sm text-gray-400">
-          Offert par <a href="https://innov-boulon.fr" target="_blank" rel="noopener noreferrer" className="font-bold text-cyan-400 hover:text-cyan-300 transition-colors">Innov&apos;BOULON</a> • Développé par <span className="font-bold text-white">Manus</span>
+        <p className="text-sm text-gray-400">
+          Offert par <a href="https://innov-boulon.fr" target="_blank" rel="noopener noreferrer" className="landing-link font-bold transition-colors">Innov&apos;BOULON</a> • Développé par <span className="font-bold text-white">Manus</span>
         </p>
       </footer>
 

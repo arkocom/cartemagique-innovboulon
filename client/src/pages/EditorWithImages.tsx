@@ -2066,7 +2066,7 @@ export default function EditorWithImages() {
                 size="lg"
                 className="px-6 md:px-8 py-3 md:py-4 text-base md:text-base bg-gradient-to-r from-green-600 to-blue-500 hover:from-green-700 hover:to-blue-600"
               >
-                {isExporting ? '⏳ Préparation...' : '📥 Télécharger'}
+                {isExporting ? '⏳ Préparation...' : '📥 Télécharger le PNG'}
               </Button>
               <Button
                 onClick={handleWhatsAppShare}
@@ -2075,7 +2075,7 @@ export default function EditorWithImages() {
                 className="px-6 md:px-8 py-3 md:py-4 text-base md:text-base bg-[#25D366] hover:bg-[#128C7E] text-white border-none"
               >
                 <Smartphone className="w-5 h-5 mr-2" />
-                WhatsApp
+                Partager le PNG
               </Button>
               <Button
                 onClick={() => setShowCanvas(false)}

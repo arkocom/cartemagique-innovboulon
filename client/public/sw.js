@@ -1,4 +1,4 @@
-const VERSION = "2026-09-30-8-motion";
+const VERSION = "2026-10-01-9-sharing-contrast";
 const SHELL_CACHE = `cartemagique-shell-${VERSION}`;
 const RUNTIME_CACHE = `cartemagique-runtime-${VERSION}`;
 const APP_CACHE_PREFIX = "cartemagique-";
