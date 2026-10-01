@@ -9,6 +9,7 @@ const getDefaultText = (themeId: string): string => {
 
 export interface AppState {
   selectedThemeId: string;
+  pendingThemeSelection: boolean;
   elements: CanvasElement[];
   selectedId: string | null;
   setSelectedThemeId: (id: string) => void;
@@ -20,6 +21,7 @@ export interface AppState {
 
 export const useAppStore = create<AppState>((set) => ({
   selectedThemeId: 'noel-1',
+  pendingThemeSelection: false,
   elements: [
     {
       id: 'main-text',
@@ -42,6 +44,7 @@ export const useAppStore = create<AppState>((set) => ({
     const content = getDefaultText(id);
     set({
       selectedThemeId: id,
+      pendingThemeSelection: true,
       elements: [
         {
           id: 'main-text',
@@ -83,3 +86,4 @@ export const useAppStore = create<AppState>((set) => ({
       selectedId: null,
     })),
 }));
+

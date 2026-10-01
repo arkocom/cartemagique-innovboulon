@@ -1,3 +1,6 @@
+import MyCards from '@/components/MyCards';
+import { readDraft, readLegacyCard, listCards, saveCard, DRAFT_ID, DEFAULT_MEDIA, storageErrorMessage, type CardSnapshot, type MediaSettings } from '@/lib/cardStorage';
+import { preparePhoto, validatePhotoBatch } from '@/lib/photoImport';
 import { chooseContrastingTextColor } from '@/lib/textContrast';
 import TextProperties from '@/components/TextProperties';
 import SupportAssociation from "@/components/SupportAssociation";
@@ -97,43 +100,18 @@ interface ImageElement {
 export default function EditorWithImages() {
   const [isClient, setIsClient] = useState(false);
   const [showCanvas, setShowCanvas] = useState(false);
-  const [textBlocks, setTextBlocks] = useState<TextBlock[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('cartemagique_textBlocks');
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch (e) {
-          console.error('Failed to parse saved textBlocks', e);
-        }
-      }
-    }
-    return [
-      {
-        id: '1',
-        text: 'Joyeux Noël !',
-        x: 200,
-        y: 300,
-        color: '#ffffff',
-        fontSize: 32,
-        style: 'modern',
-        align: 'center',
-      },
-    ];
-  });
-  const [imageElements, setImageElements] = useState<ImageElement[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('cartemagique_imageElements');
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch (e) {
-          console.error('Failed to parse saved imageElements', e);
-        }
-      }
-    }
-    return [];
-  });
+  const [textBlocks, setTextBlocks] = useState<TextBlock[]>([{ id: '1', text: 'Joyeux Noël !', x: 200, y: 300, color: '#ffffff', fontSize: 32, style: 'modern', align: 'center' }]);
+  const [imageElements, setImageElements] = useState<ImageElement[]>([]);
+  const [storageReady, setStorageReady] = useState(false);
+  const [saveStatus, setSaveStatus] = useState('Chargement de votre création…');
+  const [saveFailed, setSaveFailed] = useState(false);
+  const [showMyCards, setShowMyCards] = useState(false);
+  const [saveRetry, setSaveRetry] = useState(0);
+  const [mediaSettings, setMediaSettings] = useState<MediaSettings>(DEFAULT_MEDIA);
+  const [customFonts, setCustomFonts] = useState<Record<string, string>>({});
+  const [importingPhotos, setImportingPhotos] = useState(false);
+  const unsavedRef = useRef(false);
+  const writeQueue = useRef<Promise<void>>(Promise.resolve());
   const [selectedBlockId, setSelectedBlockId] = useState<string>('1');
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -174,11 +152,13 @@ export default function EditorWithImages() {
   const handleFontUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { alert('Choisissez une police de moins de 2 Mo.'); return; }
 
     const reader = new FileReader();
     reader.onload = (event) => {
       const fontData = event.target?.result as string;
       const fontName = `CustomFont_${Date.now()}`;
+      setCustomFonts(current => ({ ...current, [fontName]: fontData }));
       
       const newStyle = document.createElement('style');
       newStyle.appendChild(document.createTextNode(`
@@ -279,9 +259,9 @@ export default function EditorWithImages() {
 
     setHistory(prev => {
       const newHistory = prev.slice(0, historyIndex + 1);
-      return [...newHistory, currentState];
+      return [...newHistory, currentState].slice(-20);
     });
-    setHistoryIndex(prev => prev + 1);
+    setHistoryIndex(prev => Math.min(19, prev + 1));
   }, [textBlocks, imageElements, historyIndex]);
 
   // Initialize history
@@ -316,7 +296,7 @@ export default function EditorWithImages() {
       const nextState = history[historyIndex + 1];
       setTextBlocks(nextState.textBlocks);
       setImageElements(nextState.imageElements);
-      setHistoryIndex(prev => prev + 1);
+      setHistoryIndex(prev => Math.min(19, prev + 1));
       setTimeout(() => { isUndoRedoAction.current = false; }, 100);
     }
   };
@@ -459,18 +439,78 @@ export default function EditorWithImages() {
     if (showCanvas) window.scrollTo({ top: 0, behavior: 'instant' });
   }, [showCanvas]);
 
-  // Auto-save effects
+  const snapshot: CardSnapshot = { version: 1, themeId: selectedThemeId, textBlocks, imageElements, backgroundColor, aspectRatio, showFrame, frameWidth, cardMode, media: mediaSettings, textStyles, customFonts };
+  const snapshotRef = useRef(snapshot);
+  snapshotRef.current = snapshot;
+  const enqueueSave = (card: CardSnapshot) => {
+    const task = writeQueue.current.catch(() => undefined).then(() => saveCard({ id: DRAFT_ID, name: 'Création en cours', updatedAt: Date.now(), card }));
+    writeQueue.current = task;
+    return task;
+  };
+  const restoreCard = async (card: CardSnapshot, keepTheme = false) => {
+    await Promise.all(Object.entries(card.customFonts).map(async ([name, data]) => {
+      const face = new FontFace(name, `url("${data}")`);
+      await face.load(); document.fonts.add(face);
+    }));
+    if (!keepTheme) useAppStore.getState().setSelectedThemeId(card.themeId);
+    setTextBlocks(card.textBlocks); setImageElements(card.imageElements);
+    setBackgroundColor(card.backgroundColor); setAspectRatio(card.aspectRatio);
+    setShowFrame(card.showFrame); setFrameWidth(card.frameWidth); setCardMode(card.cardMode);
+    setMediaSettings(card.media); setTextStyles(card.textStyles); setCustomFonts(card.customFonts);
+    setSelectedBlockId(card.textBlocks[0]?.id ?? ''); setSelectedImageId(null);
+    setHistory([]); setHistoryIndex(-1); setShowCanvas(true); setMobileTool(null); setShowPreview(false);
+  };
   useEffect(() => {
-    if (isClient) {
-      localStorage.setItem('cartemagique_textBlocks', JSON.stringify(textBlocks));
-    }
-  }, [textBlocks, isClient]);
-
+    let cancelled = false;
+    const hydrate = async () => {
+      try {
+        const requested = new URLSearchParams(window.location.search).get('card');
+        const draft = await readDraft();
+        const card = requested ? (await listCards()).find(item => item.id === requested)?.card : draft;
+        if (requested && !card) throw new Error('Carte introuvable');
+        if (cancelled) return;
+        if (card) await restoreCard(card, !requested && useAppStore.getState().pendingThemeSelection);
+        else {
+          const legacy = readLegacyCard(window.localStorage);
+          if (legacy.textBlocks) setTextBlocks(legacy.textBlocks);
+          if (legacy.imageElements) setImageElements(legacy.imageElements);
+        }
+        if (cancelled) return;
+        useAppStore.setState({ pendingThemeSelection: false });
+        if (requested) window.history.replaceState(null, '', '/editor');
+        setSaveStatus('Sauvegarde automatique sur cet appareil.'); setStorageReady(true);
+      } catch (error) {
+        if (cancelled) return;
+        unsavedRef.current = true; setSaveFailed(true); setSaveStatus(storageErrorMessage(error));
+        // Do not overwrite an unreadable existing draft with an empty card.
+      }
+    };
+    void hydrate();
+    return () => { cancelled = true; };
+  }, [saveRetry]);
   useEffect(() => {
-    if (isClient) {
-      localStorage.setItem('cartemagique_imageElements', JSON.stringify(imageElements));
-    }
-  }, [imageElements, isClient]);
+    if (!storageReady) return;
+    let current = true;
+    unsavedRef.current = true;
+    setSaveStatus('Modifications en cours de sauvegarde…');
+    const card = snapshotRef.current;
+    void enqueueSave(card).then(() => {
+      if (current) { unsavedRef.current = false; setSaveFailed(false); setSaveStatus('Carte sauvegardée sur cet appareil.'); }
+    }).catch(error => {
+      if (current) { unsavedRef.current = true; setSaveFailed(true); setSaveStatus(storageErrorMessage(error)); }
+    });
+    return () => { current = false; };
+  }, [storageReady, textBlocks, imageElements, selectedThemeId, backgroundColor, aspectRatio, showFrame, frameWidth, cardMode, mediaSettings, textStyles, customFonts]);
+  useEffect(() => {
+    const beforeUnload = (event: BeforeUnloadEvent) => { if (unsavedRef.current) { event.preventDefault(); event.returnValue = ''; } };
+    window.addEventListener('beforeunload', beforeUnload);
+    return () => window.removeEventListener('beforeunload', beforeUnload);
+  }, []);
+  const retrySave = () => {
+    if (!storageReady) { setSaveRetry(value => value + 1); return; }
+    setSaveStatus('Nouvelle tentative…');
+    void enqueueSave(snapshotRef.current).then(() => { unsavedRef.current = false; setSaveFailed(false); setSaveStatus('Carte sauvegardée sur cet appareil.'); }).catch(error => setSaveStatus(storageErrorMessage(error)));
+  };
 
   const addSticker = (emoji: string) => {
     // Convertir l'emoji en image via canvas
@@ -842,36 +882,23 @@ export default function EditorWithImages() {
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
-    if (files.length === 0) return;
-
-    const readFile = (file: File) => new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = () => reject(reader.error);
-      reader.readAsDataURL(file);
-    });
-
-    Promise.all(files.map(readFile)).then((sources) => {
+    e.target.value = '';
+    if (!files.length || importingPhotos) return;
+    try {
+      validatePhotoBatch(files, imageElements.filter(image => image.id.startsWith('photo-')).length);
+      setImportingPhotos(true);
+      const prepared = [];
+      // Decode sequentially to limit memory usage on phones.
+      for (const file of files) prepared.push(await preparePhoto(file));
       const canvasWidth = aspectRatio === 'story' ? 338 : 400;
-      const newImages: ImageElement[] = sources.map((src, index) => ({
-        id: `photo-${Date.now()}-${index}`,
-        src,
-        x: Math.max(20, canvasWidth / 2 - 60 + (index % 3) * 12),
-        y: Math.max(20, 180 + (index % 3) * 16),
-        width: 120,
-        height: 120,
-        rotation: 0,
-        filter: 'none',
-      }));
-      setImageElements((current) => [...current, ...newImages]);
-      setSelectedImageId(newImages[0]?.id ?? null);
-      setSelectedBlockId('');
-      setCollageNotice(`${newImages.length} photo${newImages.length > 1 ? 's ajoutées' : ' ajoutée'} — ouvrez « Collage » pour les placer automatiquement.`);
-    }).catch(() => setCollageNotice('Une photo n’a pas pu être lue. Essayez un autre fichier.'));
-
-    if (fileInputRef.current) fileInputRef.current.value = '';
+      const newImages: ImageElement[] = prepared.map(({src, ratio}, index) => ({ id: `photo-${crypto.randomUUID()}`, src, x: Math.max(20, canvasWidth / 2 - 60 + (index % 3) * 12), y: 180 + (index % 3) * 16, width: 120, height: 120 * ratio, rotation: 0, filter: 'none' }));
+      setImageElements(current => [...current, ...newImages]);
+      setSelectedImageId(newImages[0]?.id ?? null); setSelectedBlockId('');
+      setCollageNotice(`${newImages.length} photo(s) ajoutée(s). Les proportions sont conservées. Ouvrez « Collage » pour les disposer.`);
+    } catch (error) { setCollageNotice(error instanceof Error ? error.message : 'Une photo n’a pas pu être lue.'); }
+    finally { setImportingPhotos(false); }
   };
 
   const updateSelectedBlock = (updates: Partial<TextBlock>) => {
@@ -1152,7 +1179,7 @@ export default function EditorWithImages() {
     }
   };
 
-  if (!isClient) {
+  if (!isClient || (!storageReady && !saveFailed)) {
     return (
       <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center">
         Chargement…
@@ -1374,6 +1401,22 @@ export default function EditorWithImages() {
       )}
 
       {/* Contenu principal */}
+      <div className="mx-auto max-w-6xl px-4 pt-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-500/30 bg-background p-3 text-foreground">
+          <p role="status" className="max-w-xl text-sm">{saveStatus}</p>
+          <div className="flex flex-wrap gap-2">
+            {saveFailed && <button onClick={retrySave} className="min-h-11 rounded-lg border border-slate-500 px-3">Réessayer la sauvegarde</button>}
+            <button onClick={() => setShowMyCards(true)} className="min-h-11 rounded-lg bg-blue-600 px-4 text-white">Mes cartes</button>
+          </div>
+        </div>
+        {importingPhotos && <p role="status" className="mt-2 text-sm">Préparation de vos photos…</p>}
+        <nav aria-label="Étapes de création" className="mt-3 grid grid-cols-3 gap-2 text-sm">
+          <button aria-current={!showCanvas ? 'step' : undefined} onClick={() => { setShowCanvas(false); setMobileTool(null); }} className="min-h-11 rounded-lg border border-slate-500/40 px-2">1 · Choisir</button>
+          <button aria-current={showCanvas && mobileTool !== 'share' ? 'step' : undefined} onClick={() => { setShowCanvas(true); setMobileTool(null); }} className="min-h-11 rounded-lg border border-slate-500/40 px-2">2 · Personnaliser</button>
+          <button aria-current={mobileTool === 'share' ? 'step' : undefined} onClick={() => { setShowCanvas(true); if (window.matchMedia('(min-width: 1024px)').matches) { if (cardMode === 'animated') requestAnimationFrame(openVideoControls); else void handleExport(); } else setMobileTool('share'); }} className="min-h-11 rounded-lg border border-slate-500/40 px-2">3 · Partager</button>
+        </nav>
+      </div>
+      <MyCards open={showMyCards} onClose={() => setShowMyCards(false)} current={storageReady ? snapshot : undefined} onRestore={async card => { if (!storageReady) throw new Error('Réessayez la sauvegarde avant d’ouvrir une autre carte.'); await enqueueSave(snapshotRef.current); await restoreCard(card); }} />
       <main className={showCanvas ? "py-5 pb-28 lg:py-8 lg:pb-8" : "py-8"}>
         {!showCanvas ? (
           <>
@@ -1425,7 +1468,7 @@ export default function EditorWithImages() {
                 </div>
               </fieldset>
               {cardMode === 'animated' && <div ref={mediaControlsRef} tabIndex={-1} className="scroll-mt-24">
-                <CardMediaControls themeId={selectedTheme.id} onAnimationChange={setCardAnimation} prepareCanvas={createExportCanvas} />
+                <CardMediaControls settings={mediaSettings} onSettingsChange={setMediaSettings} themeId={selectedTheme.id} onAnimationChange={setCardAnimation} prepareCanvas={createExportCanvas} />
               </div>}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-6">
                 {/* Carte */}
@@ -1615,7 +1658,7 @@ export default function EditorWithImages() {
                       type="file"
                       accept="image/*"
                       multiple
-                      onChange={handleImageUpload}
+                      disabled={importingPhotos} onChange={handleImageUpload}
                       className="hidden"
                     />
                     {imageElements.length > 0 && (
