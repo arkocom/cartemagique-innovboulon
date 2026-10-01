@@ -1,13 +1,17 @@
 import { drawCardEffects, type CardAnimation, type CardEvent } from './cardEffects';
 import { scheduleCardMusic } from './cardMusic';
 
-export function supportedVideoMime(): string | undefined {
+export function supportedVideoMime(withAudio = true): string | undefined {
   if (typeof MediaRecorder === 'undefined') return undefined;
-  return ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find(type => MediaRecorder.isTypeSupported(type));
+  const mp4 = withAudio
+    ? ['video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4;codecs=avc1.42001E,mp4a.40.2', 'video/mp4;codecs=avc1.42E01E,mp4a.40.2']
+    : ['video/mp4;codecs=avc1', 'video/mp4;codecs=avc1.42001E'];
+  // Generic MP4 may silently select VP9/Opus, which messaging apps can reject.
+  return [...mp4, 'video/webm;codecs=vp8,opus', 'video/webm;codecs=vp9,opus', 'video/webm'].find(type => MediaRecorder.isTypeSupported(type));
 }
 
 export async function recordCardVideo(base: HTMLCanvasElement, options: { animation: CardAnimation; event: CardEvent; music: boolean; volume: number; duration: number; audioContext?: AudioContext; signal: AbortSignal; onProgress: (value: number) => void }): Promise<Blob> {
-  const mimeType = supportedVideoMime();
+  const mimeType = supportedVideoMime(options.music);
   if (!mimeType || !HTMLCanvasElement.prototype.captureStream) throw new Error('L’export vidéo n’est pas disponible dans ce navigateur. Essayez Chrome, Edge ou Safari récent.');
   if (options.signal.aborted) throw new DOMException('Export annulé', 'AbortError');
   const canvas = document.createElement('canvas'); canvas.width = base.width; canvas.height = base.height;
@@ -35,7 +39,7 @@ export async function recordCardVideo(base: HTMLCanvasElement, options: { animat
       onAbort = fail; options.signal.addEventListener('abort', fail, { once: true }); document.addEventListener('visibilitychange', onHidden);
       recorder!.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
       recorder!.onerror = () => reject(new Error('L’enregistrement vidéo a échoué.'));
-      recorder!.onstop = () => { const blob = new Blob(chunks, { type: mimeType }); blob.size ? resolve(blob) : reject(new Error('La vidéo est vide. Réessayez.')); };
+      recorder!.onstop = () => { const blob = new Blob(chunks, { type: recorder!.mimeType || mimeType }); blob.size ? resolve(blob) : reject(new Error('La vidéo est vide. Réessayez.')); };
       recorder!.start(250);
       const start = performance.now();
       const paint = (now: number) => {
