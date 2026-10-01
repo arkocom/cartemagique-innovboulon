@@ -1994,20 +1994,13 @@ export default function EditorWithImages() {
                           <label className="flex items-center gap-3">
                             <input
                               type="checkbox"
-                              checked={textStyles[selectedBlock.style].outline}
-                              onChange={(e) => {
-                                const newStyles = { ...textStyles };
-                                newStyles[selectedBlock.style] = {
-                                  ...newStyles[selectedBlock.style],
-                                  outline: e.target.checked
-                                };
-                                setTextStyles(newStyles);
-                              }}
+                              checked={selectedBlock.outlineEnabled ?? textStyles[selectedBlock.style].outline}
+                              onChange={(e) => updateSelectedBlock({ outlineEnabled: e.target.checked })}
                               className="w-5 h-5 cursor-pointer"
                             />
                             <span className="text-sm">Ajouter un contour</span>
                           </label>
-                          {textStyles[selectedBlock.style].outline && (
+                          {(selectedBlock.outlineEnabled ?? textStyles[selectedBlock.style].outline) && (
                             <div>
                               <label className="text-sm text-gray-300 block mb-2">Épaisseur: {textStyles[selectedBlock.style].outlineWidth || 2}px</label>
                               <input
