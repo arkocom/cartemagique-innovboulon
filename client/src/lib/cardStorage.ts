@@ -16,9 +16,9 @@ export const imageSchema = z.object({
 });
 const styleSchema = z.object({ name: z.string(), fontFamily: z.string(), fontWeight: z.string().optional(), shadowBlur: numeric, shadowColor: z.string(), outline: z.boolean(), outlineWidth: numeric, outlineColor: z.string() });
 export const mediaSchema = z.object({
-  occasion: z.custom<keyof typeof EVENT_LABELS | 'auto'>(v => v === 'auto' || typeof v === 'string' && v in EVENT_LABELS),
-  effect: z.custom<keyof typeof ANIMATION_LABELS | 'auto'>(v => v === 'auto' || typeof v === 'string' && v in ANIMATION_LABELS),
-  musicChoice: z.custom<keyof typeof MUSIC_STYLES | 'auto'>(v => v === 'auto' || typeof v === 'string' && v in MUSIC_STYLES),
+  occasion: z.custom<keyof typeof EVENT_LABELS | 'auto'>(v => v === 'auto' || typeof v === 'string' && Object.hasOwn(EVENT_LABELS, v)),
+  effect: z.custom<keyof typeof ANIMATION_LABELS | 'auto'>(v => v === 'auto' || typeof v === 'string' && Object.hasOwn(ANIMATION_LABELS, v)),
+  musicChoice: z.custom<keyof typeof MUSIC_STYLES | 'auto'>(v => v === 'auto' || typeof v === 'string' && Object.hasOwn(MUSIC_STYLES, v)),
   music: z.boolean(), volume: numeric.min(0).max(100), duration: z.union([z.literal(5), z.literal(10), z.literal(15)]),
 });
 export type MediaSettings = z.infer<typeof mediaSchema>;
