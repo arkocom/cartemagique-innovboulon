@@ -11,6 +11,7 @@ describe('saved creation boundaries', () => {
   it('rejects malformed drafts instead of treating them as an empty creation', () => {
     expect(() => cardSnapshotSchema.parse({ ...card, imageElements: [{ id: 'broken' }] })).toThrow();
     expect(() => cardSnapshotSchema.parse({ ...card, version: 2 })).toThrow();
+    expect(() => cardSnapshotSchema.parse({ ...card, media: { ...card.media, musicChoice: 'constructor' } })).toThrow();
   });
   it('migrates existing text and photos together and preserves an empty text list', () => {
     const values = { cartemagique_textBlocks: '[]', cartemagique_imageElements: JSON.stringify(card.imageElements) };

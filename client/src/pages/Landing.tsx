@@ -224,7 +224,7 @@ export default function Landing() {
             className="hero-choices"
             aria-label="Changer le fond de démonstration"
           >
-            {featured.slice(0, 3).map((item, index) => (
+            {seasonalFeatured.slice(0, 3).map((item, index) => (
               <button
                 key={item.id}
                 type="button"

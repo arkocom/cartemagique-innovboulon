@@ -253,8 +253,8 @@ export default function EditorWithImages() {
     if (isUndoRedoAction.current) return;
     
     const currentState = {
-      textBlocks: JSON.parse(JSON.stringify(textBlocks)),
-      imageElements: JSON.parse(JSON.stringify(imageElements))
+      textBlocks: textBlocks.map(block => ({ ...block })),
+      imageElements: imageElements.map(image => ({ ...image }))
     };
 
     setHistory(prev => {
