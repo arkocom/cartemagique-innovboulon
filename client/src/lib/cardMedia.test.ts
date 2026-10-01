@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { animationForEvent, drawCardEffects, eventForTheme } from './cardEffects';
+import { musicForTheme } from './cardMusic';
 import { supportedVideoMime } from './cardVideo';
 
 describe('occasion-aware animated cards', () => {
@@ -8,6 +9,13 @@ describe('occasion-aware animated cards', () => {
     expect(animationForEvent(eventForTheme('famille-anniversaire'))).toBe('confetti');
     expect(animationForEvent(eventForTheme('nouvel-an-4'))).toBe('fireworks');
     expect(animationForEvent(eventForTheme('famille-amour'))).toBe('hearts');
+  });
+  it('adapts music to the selected card and honours an explicit occasion', () => {
+    expect(musicForTheme('noel-3', 'noel')).toBe('noel-festif');
+    expect(musicForTheme('noel-4', 'noel')).toBe('noel-doux');
+    expect(musicForTheme('noel-5', 'noel')).toBe('noel');
+    expect(musicForTheme('noel-3', 'anniversaire')).toBe('anniversaire');
+    expect(eventForTheme('famille-3')).toBe('merci');
   });
   it('leaves a still card untouched when animation is disabled', () => {
     const context = { save: vi.fn() };
