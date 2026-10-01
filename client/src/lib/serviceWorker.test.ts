@@ -107,8 +107,8 @@ describe('service worker cache versioning and offline assets', () => {
     const harness = createServiceWorkerHarness([
       'cartemagique-shell-2026-09-30-3',
       'cartemagique-runtime-2026-09-30-3',
-      'cartemagique-shell-2026-10-01-14-landing',
-      'cartemagique-runtime-2026-10-01-14-landing',
+      'cartemagique-shell-2026-10-01-15-fonts-seo',
+      'cartemagique-runtime-2026-10-01-15-fonts-seo',
       'unrelated-cache',
     ]);
 
@@ -119,8 +119,8 @@ describe('service worker cache versioning and offline assets', () => {
     expect(harness.self.skipWaiting).toHaveBeenCalledOnce();
     expect(harness.self.clients.claim).toHaveBeenCalledOnce();
     expect(remainingNames).toEqual([
-      'cartemagique-shell-2026-10-01-14-landing',
-      'cartemagique-runtime-2026-10-01-14-landing',
+      'cartemagique-shell-2026-10-01-15-fonts-seo',
+      'cartemagique-runtime-2026-10-01-15-fonts-seo',
       'unrelated-cache',
     ]);
   });
@@ -130,7 +130,7 @@ describe('service worker cache versioning and offline assets', () => {
 
     const firstResponse = await requestImage(harness, '/backgrounds/hiver.webp');
     expect(await firstResponse.text()).toBe('sample background bytes');
-    expect(harness.stores.has('cartemagique-runtime-2026-10-01-14-landing')).toBe(true);
+    expect(harness.stores.has('cartemagique-runtime-2026-10-01-15-fonts-seo')).toBe(true);
 
     harness.setOnline(false);
     const offlineResponse = await requestImage(harness, '/backgrounds/hiver.webp');

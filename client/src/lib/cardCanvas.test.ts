@@ -57,6 +57,17 @@ function createOptions(overrides: Partial<CardCanvasRenderOptions> = {}): CardCa
 }
 
 describe('card canvas rendering', () => {
+  it('removes every shadow component and outline for the selected text, preserving the script weight', async () => {
+    const { canvas, context } = createMockCanvas();
+    const options = createOptions({ textBlocks: [{ text: 'Bonjour', x: 200, y: 300, color: '#fff', fontSize: 32, style: 'modern', align: 'center', shadowEnabled: false, outlineEnabled: false }] });
+    options.textStyles.modern.fontWeight = '400';
+    options.textStyles.modern.outline = true;
+    await renderCardToCanvas(canvas, options, vi.fn());
+    expect(context).toMatchObject({ shadowBlur: 0, shadowColor: 'transparent', shadowOffsetX: 0, shadowOffsetY: 0, font: '400 32px Arial, sans-serif' });
+    expect(context.strokeText).not.toHaveBeenCalled();
+    expect(context.fillText).toHaveBeenCalledWith('Bonjour', expect.any(Number), expect.any(Number));
+  });
+
   it('uses the expected dimensions for card and story formats', () => {
     expect(getCardCanvasSize('standard')).toEqual({ width: 400, height: 600 });
     expect(getCardCanvasSize('story')).toEqual({ width: 338, height: 600 });
@@ -185,3 +196,4 @@ describe('card canvas rendering', () => {
   });
 
 });
+

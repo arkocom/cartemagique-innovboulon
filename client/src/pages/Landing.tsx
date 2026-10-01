@@ -387,6 +387,17 @@ export default function Landing() {
             </div>
           </div>
         </section>
+        <section className="applications-network" aria-labelledby="applications-title">
+          <h2 id="applications-title">Découvrez aussi les applications Innov’BOULON</h2>
+          <p>Des outils et des découvertes proposés par notre association.</p>
+          <nav aria-label="Applications Innov’BOULON">
+            <a href="https://delanature.fr" target="_blank" rel="noopener noreferrer">De la Nature ↗</a>
+            <a href="https://foodtruck-caen.fr" target="_blank" rel="noopener noreferrer">FoodTruck Caen ↗</a>
+            <a href="https://dame-irma.fr" target="_blank" rel="noopener noreferrer">Dame Irma ↗</a>
+            <a href="https://studio.innov-boulon.fr" target="_blank" rel="noopener noreferrer">Studio Innov’BOULON ↗</a>
+            <a href="https://app.innov-boulon.fr" target="_blank" rel="noopener noreferrer">Plateforme de formation ↗</a>
+          </nav>
+        </section>
       </main>
       <footer className="landing-footer">
         <Link href="/" className="brand">
@@ -400,7 +411,7 @@ export default function Landing() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          Découvrir l’association ↗
+          Découvrir les applications Innov’BOULON ↗
         </a>
         <span>Créons de belles attentions, ensemble.</span>
       </footer>
