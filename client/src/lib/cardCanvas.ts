@@ -24,11 +24,14 @@ export interface CardCanvasTextBlock {
   fontSize: number;
   style: string;
   align: 'left' | 'center' | 'right';
+  shadowEnabled?: boolean;
+  outlineEnabled?: boolean;
 }
 
 export interface CardCanvasTextStyle {
   name: string;
   fontFamily: string;
+  fontWeight?: string;
   shadowBlur: number;
   shadowColor: string;
   outline: boolean;
@@ -163,7 +166,7 @@ export function isPointInsideCardTextBlock(
   showFrame: boolean,
   frameWidth: number,
 ): boolean {
-  context.font = `bold ${block.fontSize}px ${style.fontFamily}`;
+  context.font = `${style.fontWeight ?? 'bold'} ${block.fontSize}px ${style.fontFamily}`;
   const inset = Math.max(TEXT_SAFE_MARGIN, showFrame ? frameWidth + 8 : TEXT_SAFE_MARGIN);
   const maxTextWidth = Math.max(40, canvasWidth - inset * 2);
   const lines = wrapTextToWidth(context, block.text, maxTextWidth);
@@ -223,6 +226,13 @@ export async function renderCardToCanvas(
   const context = canvas.getContext('2d');
   if (!context) throw new Error('Le contexte graphique 2D est indisponible.');
 
+  // Canvas does not wait for web fonts: load before measuring, previewing or exporting.
+  if (typeof document !== 'undefined' && document.fonts?.load) {
+    await Promise.all(options.textBlocks.map((block) => {
+      const style = options.textStyles[block.style] ?? DEFAULT_TEXT_STYLE;
+      return document.fonts.load(`${style.fontWeight ?? 'bold'} ${block.fontSize}px ${style.fontFamily}`, block.text || 'Bonjour');
+    }));
+  }
   const { width, height } = getCardCanvasSize(options.aspectRatio);
   const backgroundPromise = options.backgroundColor
     ? Promise.resolve(null)
@@ -290,15 +300,16 @@ export async function renderCardToCanvas(
   options.textBlocks.forEach((block) => {
     const style = options.textStyles[block.style] ?? options.textStyles.modern ?? DEFAULT_TEXT_STYLE;
     context.save();
-    context.font = `bold ${block.fontSize}px ${style.fontFamily}`;
+    context.font = `${style.fontWeight ?? 'bold'} ${block.fontSize}px ${style.fontFamily}`;
     context.fillStyle = block.color;
     const align = block.align || 'center';
     context.textAlign = align;
     context.textBaseline = 'middle';
-    context.shadowColor = style.shadowColor;
-    context.shadowBlur = style.shadowBlur;
-    context.shadowOffsetX = 2;
-    context.shadowOffsetY = 2;
+    const hasShadow = (block.shadowEnabled ?? style.shadowBlur > 0);
+    context.shadowColor = hasShadow ? (style.shadowColor === 'transparent' ? 'rgba(0,0,0,0.6)' : style.shadowColor) : 'transparent';
+    context.shadowBlur = hasShadow ? (style.shadowBlur || 8) : 0;
+    context.shadowOffsetX = hasShadow ? 2 : 0;
+    context.shadowOffsetY = hasShadow ? 2 : 0;
 
     const safeInset = Math.max(
       TEXT_SAFE_MARGIN,
@@ -314,7 +325,7 @@ export async function renderCardToCanvas(
 
     lines.forEach((line, index) => {
       const lineY = startY + index * lineHeight;
-      if (style.outline) {
+      if (block.outlineEnabled ?? style.outline) {
         context.strokeStyle = style.outlineColor || '#000000';
         context.lineWidth = style.outlineWidth || 2;
         context.lineJoin = 'round';
@@ -328,3 +339,4 @@ export async function renderCardToCanvas(
 
   return true;
 }
+

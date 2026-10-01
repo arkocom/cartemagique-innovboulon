@@ -1,4 +1,4 @@
-const VERSION = "2026-10-01-14-landing";
+const VERSION = "2026-10-01-15-fonts-seo";
 const SHELL_CACHE = `cartemagique-shell-${VERSION}`;
 const RUNTIME_CACHE = `cartemagique-runtime-${VERSION}`;
 const APP_CACHE_PREFIX = "cartemagique-";

@@ -1,3 +1,4 @@
+import TextProperties from '@/components/TextProperties';
 import SupportAssociation from "@/components/SupportAssociation";
 import { useState, useRef, useEffect, useCallback } from 'react';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -21,6 +22,11 @@ import { isShareAbortError } from '@/lib/shareUtils';
 type TextStyle = 'classic' | 'modern' | 'elegant' | 'festive' | string;
 
 const INITIAL_TEXT_STYLES = {
+  allura: { name: 'Allura', fontFamily: '"Allura", cursive', fontWeight: '400', shadowBlur: 0, shadowColor: 'transparent', outline: false, outlineWidth: 0, outlineColor: '#000000' },
+  greatvibes: { name: 'Great Vibes', fontFamily: '"Great Vibes", cursive', fontWeight: '400', shadowBlur: 0, shadowColor: 'transparent', outline: false, outlineWidth: 0, outlineColor: '#000000' },
+  parisienne: { name: 'Parisienne', fontFamily: '"Parisienne", cursive', fontWeight: '400', shadowBlur: 0, shadowColor: 'transparent', outline: false, outlineWidth: 0, outlineColor: '#000000' },
+  alexbrush: { name: 'Alex Brush', fontFamily: '"Alex Brush", cursive', fontWeight: '400', shadowBlur: 0, shadowColor: 'transparent', outline: false, outlineWidth: 0, outlineColor: '#000000' },
+  sacramento: { name: 'Sacramento', fontFamily: '"Sacramento", cursive', fontWeight: '400', shadowBlur: 0, shadowColor: 'transparent', outline: false, outlineWidth: 0, outlineColor: '#000000' },
   classic: {
     name: 'Classique',
     fontFamily: 'Georgia, serif',
@@ -50,7 +56,8 @@ const INITIAL_TEXT_STYLES = {
   },
   festive: {
     name: 'Festif',
-    fontFamily: 'Impact, sans-serif',
+    fontFamily: 'Georgia, serif',
+    fontWeight: '400',
     shadowBlur: 10,
     shadowColor: 'rgba(255, 215, 0, 0.8)',
     outline: true,
@@ -68,6 +75,8 @@ export interface TextBlock {
   fontSize: number;
   style: TextStyle;
   align: 'left' | 'center' | 'right';
+  shadowEnabled?: boolean;
+  outlineEnabled?: boolean;
 }
 
 interface ImageElement {
@@ -1852,6 +1861,7 @@ export default function EditorWithImages() {
 
                       <div className={`rounded-lg p-4 space-y-4 ${darkMode ? 'bg-gray-800' : 'bg-white shadow-sm'}`}>
                         <h3 className="text-lg font-bold">Style de texte</h3>
+                        <TextProperties block={selectedBlock} styles={textStyles} onChange={updateSelectedBlock} />
                         {/* Text Alignment Controls */}
                         <div className="flex gap-2 mb-4 p-1 bg-gray-100 dark:bg-gray-700 rounded-lg w-fit mx-auto">
                           <button
@@ -2202,7 +2212,7 @@ export default function EditorWithImages() {
                           ))}
                         </div>
                         <div className="flex items-center justify-between gap-2 rounded-2xl bg-slate-800 p-2">
-                          <span className="pl-2 text-sm text-slate-300">Taille</span>
+                          <button onClick={() => setMobileTool('style')} className="min-h-10 px-2 text-sm underline">Police et effets</button>
                           <div className="flex gap-2">
                             <button onClick={() => updateSelectedBlock({ fontSize: Math.max(18, selectedBlock.fontSize - 4) })} className="min-h-10 min-w-10 rounded-xl bg-slate-700 text-lg font-bold active:scale-95">A−</button>
                             <span className="flex min-w-12 items-center justify-center text-sm font-semibold">{selectedBlock.fontSize}</span>
@@ -2220,7 +2230,14 @@ export default function EditorWithImages() {
                 {mobileTool === 'photo' && (
                   <div className="space-y-3">
                     <div>
-                      <h4 className="mb-2 font-semibold">Émoticônes et stickers</h4>
+                      {selectedImage && <div className="space-y-3 rounded-2xl bg-slate-800 p-3">
+                      <h4 className="font-semibold">Propriétés de l’image sélectionnée</h4>
+                      <label className="block">Taille <input aria-label="Taille de l’image" type="range" min="30" max="400" value={selectedImage.width} onChange={(e) => { const width = Number(e.target.value); updateSelectedImage({ width, height: selectedImage.height * width / selectedImage.width }); }} className="w-full" /></label>
+                      <label className="block">Rotation <input aria-label="Rotation de l’image" type="range" min="0" max="360" value={selectedImage.rotation} onChange={(e) => updateSelectedImage({ rotation: Number(e.target.value) })} className="w-full" /></label>
+                      <label className="block">Filtre <select value={selectedImage.filter || 'none'} onChange={(e) => updateSelectedImage({ filter: e.target.value as ImageElement['filter'] })} className="min-h-11 w-full rounded-lg bg-slate-700"><option value="none">Aucun</option><option value="grayscale">Noir et blanc</option><option value="sepia">Sépia</option><option value="vintage">Vintage</option></select></label>
+                      <button onClick={() => handleDeleteImage(selectedImage.id)} className="min-h-11 w-full rounded-lg bg-red-700 text-white">Supprimer cette image</button>
+                    </div>}
+                    <h4 className="mb-2 font-semibold">Émoticônes et stickers</h4>
                       <div className="grid grid-cols-6 gap-2">
                         {STICKERS.map((sticker) => <button type="button" key={sticker} aria-label={`Ajouter ${sticker}`} onClick={() => { addSticker(sticker); setMobileTool(null); }} className="flex min-h-12 items-center justify-center rounded-xl border border-slate-600 bg-slate-800 text-2xl" style={{ fontFamily: '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif' }}>{sticker}</button>)}
                       </div>
@@ -2261,6 +2278,7 @@ export default function EditorWithImages() {
                     </div>
                     {selectedBlock && (
                       <div>
+                        <TextProperties block={selectedBlock} styles={textStyles} onChange={updateSelectedBlock} />
                         <p className="mb-2 text-sm font-semibold text-slate-200">Couleur du texte</p>
                         <div className="flex gap-3">
                           {['#ffffff', '#000000', '#fbbf24', '#f87171', '#60a5fa'].map((color) => (
