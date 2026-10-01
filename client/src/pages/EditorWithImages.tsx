@@ -137,7 +137,14 @@ export default function EditorWithImages() {
   const [stickerTint, setStickerTint] = useState<string>('original'); // 'original', '#FFD700', '#FF0000', etc.
   const { theme: uiTheme } = useTheme();
   const darkMode = uiTheme === 'dark';
-  const [cardAnimation, setCardAnimation] = useState<CardAnimation>('snow');
+  const [cardAnimation, setCardAnimation] = useState<CardAnimation>('none');
+  const [cardMode, setCardMode] = useState<'static' | 'animated'>('static');
+  const mediaControlsRef = useRef<HTMLDivElement>(null);
+  const openVideoControls = () => {
+    setMobileTool(null);
+    mediaControlsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    mediaControlsRef.current?.focus({ preventScroll: true });
+  };
   const [activeTab, setActiveTab] = useState<'carte' | 'parametres'>('carte');
   const [showTemplates, setShowTemplates] = useState(false);
   const [aspectRatio, setAspectRatio] = useState<'standard' | 'story'>('standard'); // standard (400x600) or story (338x600 - 9:16 approx)
@@ -1361,7 +1368,27 @@ export default function EditorWithImages() {
             </div>
 
             <div className="max-w-6xl mx-auto px-2 md:px-4">
-              <CardMediaControls themeId={selectedTheme.id} onAnimationChange={setCardAnimation} prepareCanvas={createExportCanvas} />
+              <fieldset className="mb-5 rounded-xl border border-slate-500/30 bg-background p-4 text-foreground">
+                <legend className="px-2 font-semibold">Quel type de carte souhaitez-vous ?</legend>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {([
+                    ['static', 'Carte statique', 'Une image PNG, sans musique ni animation.'],
+                    ['animated', 'Carte animée', 'Une vidéo avec votre musique et vos effets.'],
+                  ] as const).map(([mode, label, description]) => (
+                    <label key={mode} className={`flex cursor-pointer items-start gap-3 rounded-xl border-2 p-4 ${cardMode === mode ? 'border-blue-600 bg-blue-500/10' : 'border-slate-500/30'}`}>
+                      <input type="radio" name="card-mode" value={mode} checked={cardMode === mode} aria-label={label} className="mt-1 accent-blue-600" onChange={() => {
+                        setCardMode(mode);
+                        setShowPreview(false);
+                        if (mode === 'static') setCardAnimation('none');
+                      }} />
+                      <span><span className="block font-semibold">{label}</span><span className="mt-1 block text-sm text-muted-foreground">{description}</span></span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+              {cardMode === 'animated' && <div ref={mediaControlsRef} tabIndex={-1} className="scroll-mt-24">
+                <CardMediaControls themeId={selectedTheme.id} onAnimationChange={setCardAnimation} prepareCanvas={createExportCanvas} />
+              </div>}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-6">
                 {/* Carte */}
                 <div className="lg:col-span-2 order-1">
@@ -2060,6 +2087,7 @@ export default function EditorWithImages() {
             </div>
 
             <div className="hidden lg:flex text-center mt-6 md:mt-10 flex-col sm:flex-row gap-2 md:gap-4 justify-center">
+              {cardMode === 'static' ? <>
               <Button
                 onClick={handleExport}
                 disabled={isExporting}
@@ -2077,6 +2105,7 @@ export default function EditorWithImages() {
                 <Smartphone className="w-5 h-5 mr-2" />
                 Partager le PNG
               </Button>
+              </> : <Button onClick={openVideoControls} size="lg">Créer et partager la vidéo</Button>}
               <Button
                 onClick={() => setShowCanvas(false)}
                 variant="outline"
@@ -2234,8 +2263,8 @@ export default function EditorWithImages() {
 
                 {mobileTool === 'share' && (
                   <div className="space-y-3">
-                    <p className="rounded-2xl bg-slate-800 p-4 text-sm leading-relaxed text-slate-300">Votre création est prête. Ouvrez l’aperçu pour l’enregistrer, l’envoyer ou la partager depuis votre smartphone.</p>
-                    <button onClick={() => { handleExport(); setMobileTool(null); }} disabled={isExporting} className="min-h-14 w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-cyan-500 font-bold text-slate-950 disabled:opacity-60">{isExporting ? 'Préparation…' : 'Prévisualiser et télécharger'}</button>
+                    <p className="rounded-2xl bg-slate-800 p-4 text-sm leading-relaxed text-slate-300">{cardMode === 'static' ? 'Votre carte statique sera enregistrée et partagée comme une image PNG.' : 'Créez votre vidéo avec la musique et les effets choisis, puis téléchargez-la ou partagez-la.'}</p>
+                    <button onClick={() => { if (cardMode === 'animated') openVideoControls(); else { void handleExport(); setMobileTool(null); } }} disabled={isExporting} className="min-h-14 w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-cyan-500 font-bold text-slate-950 disabled:opacity-60">{isExporting ? 'Préparation…' : cardMode === 'static' ? 'Prévisualiser et partager le PNG' : 'Créer et partager la vidéo'}</button>
                     <button onClick={() => { setShowCanvas(false); setMobileTool(null); }} className="min-h-12 w-full rounded-2xl border border-slate-600 bg-slate-800 font-semibold">Changer de fond</button>
                   </div>
                 )}
