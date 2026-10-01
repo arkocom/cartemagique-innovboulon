@@ -1,3 +1,4 @@
+import MyCards from '@/components/MyCards';
 import "./Landing.css";
 import { galleryThemes } from "@/lib/themes";
 import { useAppStore } from "@/stores/appStore";
@@ -16,6 +17,8 @@ export default function Landing() {
   const { theme } = useTheme();
   const setSelectedThemeId = useAppStore((state) => state.setSelectedThemeId);
   const [previewIndex, setPreviewIndex] = useState(0);
+  const [galleryOccasion, setGalleryOccasion] = useState('all');
+  const month = new Date().getMonth();
   const featured = [
     "noel-3",
     "noel-4",
@@ -28,12 +31,18 @@ export default function Landing() {
   ]
     .map((id) => galleryThemes.find((item) => item.id === id))
     .filter((item): item is NonNullable<typeof item> => Boolean(item));
-  const heroCard = featured[previewIndex % featured.length];
+  const seasonalFeatured = [...featured].sort((a, b) => {
+    const rank = (id: string) => month === 0 ? Number(id.startsWith('nouvel-an')) : month >= 10 ? Number(id.startsWith('noel')) : Number(id.startsWith('nature') || id.startsWith('famille'));
+    return rank(b.id) - rank(a.id);
+  });
+  const visibleFeatured = seasonalFeatured.filter(item => galleryOccasion === 'all' || (galleryOccasion === 'attention' ? !item.id.startsWith('noel') && !item.id.startsWith('nouvel-an') : item.id.startsWith(galleryOccasion)));
+  const heroCard = seasonalFeatured[previewIndex % seasonalFeatured.length];
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
   const [isStandalone, setIsStandalone] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [showInstallHelp, setShowInstallHelp] = useState(false);
+  const [showMyCards, setShowMyCards] = useState(false);
   const [copyStatus, setCopyStatus] = useState('');
 
   useEffect(() => {
@@ -107,12 +116,14 @@ export default function Landing() {
           <a href="#comment">Comment ça marche</a>
           <a href="#modeles">Modèles</a>
           <a href="#soutien">Soutien</a>
+          <button onClick={() => setShowMyCards(true)}>Mes cartes</button>
           <ThemeToggle />
           <Link href="/editor" className="btn btn-primary btn-sm">
             ✨ Créer ma carte
           </Link>
         </div>
       </nav>
+      <MyCards open={showMyCards} onClose={() => setShowMyCards(false)} />
       <main>
         <header className="hero">
           <div className="hero-grid">
@@ -148,6 +159,7 @@ export default function Landing() {
                 <a href="#modeles" className="btn btn-ghost">
                   Voir les modèles
                 </a>
+                <button onClick={() => setShowMyCards(true)} className="btn btn-ghost">Retrouver mes cartes</button>
               </div>
               <div className="hero-trust">
                 <img
@@ -313,8 +325,11 @@ export default function Landing() {
                 Tous les modèles →
               </Link>
             </div>
+            <div className="hero-cta" role="group" aria-label="Filtrer les modèles par occasion">
+              {[['all', 'Toutes les occasions'], ['noel', 'Noël'], ['nouvel-an', 'Nouvel An'], ['attention', 'Petites attentions']].map(([id, label]) => <button key={id} aria-pressed={galleryOccasion === id} onClick={() => setGalleryOccasion(id)} className={`btn ${galleryOccasion === id ? 'btn-primary' : 'btn-ghost'}`}>{label}</button>)}
+            </div>
             <div className="tpl-grid">
-              {featured.map((item) => (
+              {visibleFeatured.map((item) => (
                 <Link
                   key={item.id}
                   href="/editor"
