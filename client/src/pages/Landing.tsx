@@ -1,3 +1,4 @@
+import SupportAssociation from "@/components/SupportAssociation";
 import ThemeToggle from "@/components/ThemeToggle";
 import { Link } from "wouter";
 import { useEffect, useState } from "react";
@@ -58,7 +59,7 @@ export default function Landing() {
   };
 
   return (
-    <div className="landing-page min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white p-4 relative overflow-hidden">
+    <div className="landing-page min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white px-4 pt-28 pb-8 relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-red-500/10 rounded-full blur-[120px]" />
         <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-green-500/10 rounded-full blur-[120px]" />
@@ -102,9 +103,10 @@ export default function Landing() {
         {isStandalone && (
           <p className="mt-5 text-sm landing-status">✓ Application installée · les mises à jour sont automatiques</p>
         )}
+        <SupportAssociation />
       </main>
 
-      <footer className="absolute bottom-5 sm:bottom-8 z-20 text-center px-4">
+      <footer className="mt-8 z-20 text-center px-4">
         <p className="text-sm text-gray-400">
           Offert par <a href="https://innov-boulon.fr" target="_blank" rel="noopener noreferrer" className="landing-link font-bold transition-colors">Innov&apos;BOULON</a> • Développé par <span className="font-bold text-white">Manus</span>
         </p>
