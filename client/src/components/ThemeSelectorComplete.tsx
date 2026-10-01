@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { galleryThemes } from '@/lib/themes';
 import { useAppStore } from '@/stores/appStore';
 import type { Category } from '@/../../shared/types';
 
-export default function ThemeSelectorComplete() {
+export default function ThemeSelectorComplete({ onPersonalize }: { onPersonalize?: () => void }) {
+  const lastTap = useRef<{ id: string; time: number } | null>(null);
+  const personalize = (id: string) => { setSelectedThemeId(id); onPersonalize?.(); };
   const [activeCategory, setActiveCategory] = useState<Category>('noel');
   const selectedThemeId = useAppStore((state) => state.selectedThemeId);
   const setSelectedThemeId = useAppStore((state) => state.setSelectedThemeId);
@@ -45,6 +47,7 @@ export default function ThemeSelectorComplete() {
         })}
       </div>
 
+      <p className="mb-4 text-sm text-muted-foreground">Touchez un fond pour le choisir. Double-cliquez ou touchez-le deux fois rapidement pour le personnaliser.</p>
       {/* Grille de thèmes */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
         {filteredThemes.map((theme) => {
@@ -56,6 +59,16 @@ export default function ThemeSelectorComplete() {
               aria-pressed={isSelected}
               key={theme.id}
               onClick={() => setSelectedThemeId(theme.id)}
+              onDoubleClick={() => personalize(theme.id)}
+              onPointerUp={(event) => {
+                if (event.pointerType !== 'touch') return;
+                const now = Date.now();
+                if (lastTap.current?.id === theme.id && now - lastTap.current.time < 400) {
+                  lastTap.current = null;
+                  personalize(theme.id);
+                } else lastTap.current = { id: theme.id, time: now };
+              }}
+              style={{ touchAction: 'manipulation' }}
               className={`cursor-pointer group rounded-xl overflow-hidden border-2 transition-all ${
                 isSelected
                   ? 'border-amber-500 ring-2 ring-amber-500/30'
