@@ -1,3 +1,4 @@
+import SupportAssociation from "@/components/SupportAssociation";
 import { useState, useRef, useEffect, useCallback } from 'react';
 import ThemeToggle from '@/components/ThemeToggle';
 import CardMediaControls from '@/components/CardMediaControls';
@@ -2117,6 +2118,7 @@ export default function EditorWithImages() {
             </div>
           </>
         )}
+        <SupportAssociation />
       </main>
 
       <TextAssistantDialog
