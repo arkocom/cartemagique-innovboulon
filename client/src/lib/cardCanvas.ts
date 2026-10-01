@@ -26,6 +26,8 @@ export interface CardCanvasTextBlock {
   align: 'left' | 'center' | 'right';
   shadowEnabled?: boolean;
   outlineEnabled?: boolean;
+  outlineWidth?: number;
+  outlineColor?: string;
 }
 
 export interface CardCanvasTextStyle {
@@ -156,16 +158,14 @@ function clampTextAnchorX(
   );
 }
 
-export function isPointInsideCardTextBlock(
+export function getCardTextBounds(
   context: CanvasRenderingContext2D,
   block: CardCanvasTextBlock,
   style: CardCanvasTextStyle,
-  x: number,
-  y: number,
   canvasWidth: number,
   showFrame: boolean,
   frameWidth: number,
-): boolean {
+): { left: number; right: number; top: number; bottom: number } {
   context.font = `${style.fontWeight ?? 'bold'} ${block.fontSize}px ${style.fontFamily}`;
   const inset = Math.max(TEXT_SAFE_MARGIN, showFrame ? frameWidth + 8 : TEXT_SAFE_MARGIN);
   const maxTextWidth = Math.max(40, canvasWidth - inset * 2);
@@ -189,12 +189,15 @@ export function isPointInsideCardTextBlock(
     Math.min(style.shadowBlur || 0, 16),
   );
 
-  return (
-    x >= left - padding &&
-    x <= left + widestLine + padding &&
-    y >= block.y - totalHeight / 2 - padding &&
-    y <= block.y + totalHeight / 2 + padding
-  );
+  return { left: left - padding, right: left + widestLine + padding, top: block.y - totalHeight / 2 - padding, bottom: block.y + totalHeight / 2 + padding };
+}
+
+export function isPointInsideCardTextBlock(
+  context: CanvasRenderingContext2D, block: CardCanvasTextBlock, style: CardCanvasTextStyle,
+  x: number, y: number, canvasWidth: number, showFrame: boolean, frameWidth: number,
+): boolean {
+  const bounds = getCardTextBounds(context, block, style, canvasWidth, showFrame, frameWidth);
+  return x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom;
 }
 
 async function loadRequiredCanvasImage(
@@ -326,8 +329,8 @@ export async function renderCardToCanvas(
     lines.forEach((line, index) => {
       const lineY = startY + index * lineHeight;
       if (block.outlineEnabled ?? style.outline) {
-        context.strokeStyle = style.outlineColor || '#000000';
-        context.lineWidth = style.outlineWidth || 2;
+        context.strokeStyle = block.outlineColor ?? style.outlineColor ?? '#000000';
+        context.lineWidth = block.outlineWidth ?? (style.outlineWidth || 2);
         context.lineJoin = 'round';
         context.miterLimit = 2;
         context.strokeText(line, drawX, lineY);

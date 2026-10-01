@@ -1,3 +1,4 @@
+import { chooseContrastingTextColor } from '@/lib/textContrast';
 import TextProperties from '@/components/TextProperties';
 import SupportAssociation from "@/components/SupportAssociation";
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -16,7 +17,7 @@ import { Slider } from '@/components/ui/slider';
 import ThemeSelectorComplete from '@/components/ThemeSelectorComplete';
 import TextAssistantDialog from '@/components/TextAssistantDialog';
 import { Trash2, Plus, Upload, RotateCw, ZoomIn, ZoomOut, AlignLeft, AlignCenter, AlignRight, Wand2, Undo, Redo, Smartphone, Monitor, Type, LayoutGrid, ImagePlus, SlidersHorizontal, Send, X } from 'lucide-react';
-import { CardCanvasAssetError, getCardCanvasSize, isPointInsideCardTextBlock, renderCardToCanvas, type CardCanvasTextStyle } from '@/lib/cardCanvas';
+import { CardCanvasAssetError, getCardCanvasSize, isPointInsideCardTextBlock, getCardTextBounds, renderCardToCanvas, type CardCanvasTextStyle } from '@/lib/cardCanvas';
 import { isShareAbortError } from '@/lib/shareUtils';
 
 type TextStyle = 'classic' | 'modern' | 'elegant' | 'festive' | string;
@@ -77,6 +78,8 @@ export interface TextBlock {
   align: 'left' | 'center' | 'right';
   shadowEnabled?: boolean;
   outlineEnabled?: boolean;
+  outlineWidth?: number;
+  outlineColor?: string;
 }
 
 interface ImageElement {
@@ -159,7 +162,7 @@ export default function EditorWithImages() {
   const [showTemplates, setShowTemplates] = useState(false);
   const [aspectRatio, setAspectRatio] = useState<'standard' | 'story'>('standard'); // standard (400x600) or story (338x600 - 9:16 approx)
   const fontInputRef = useRef<HTMLInputElement>(null);
-  const [customFonts, setCustomFonts] = useState<string[]>([]);
+  const [adaptingColor, setAdaptingColor] = useState(false);
   const [showMagicDust, setShowMagicDust] = useState(false);
   const [textStyles, setTextStyles] = useState<Record<string, CardCanvasTextStyle>>(INITIAL_TEXT_STYLES);
   const [backgroundColor, setBackgroundColor] = useState<string>(''); // Empty string means use image
@@ -186,7 +189,7 @@ export default function EditorWithImages() {
       `));
       document.head.appendChild(newStyle);
       
-      setCustomFonts(prev => [...prev, fontName]);
+
       
       // Add to textStyles dynamically
       setTextStyles(prev => ({
@@ -877,6 +880,31 @@ export default function EditorWithImages() {
         block.id === selectedBlockId ? { ...block, ...updates } : block
       )
     );
+  };
+
+  const adaptTextColor = async () => {
+    if (!selectedBlock || adaptingColor) return;
+    const block = { ...selectedBlock };
+    setAdaptingColor(true);
+    try {
+      const canvas = document.createElement('canvas');
+      const { width, height } = getCardCanvasSize(aspectRatio);
+      canvas.width = width; canvas.height = height;
+      await renderCardToCanvas(canvas, { aspectRatio, backgroundColor, backgroundImage: selectedTheme.image, imageElements, textBlocks: [], textStyles, showFrame, frameWidth }, loadCanvasImage);
+      const style = textStyles[block.style] ?? textStyles.modern;
+      await document.fonts.load(`${style.fontWeight ?? 'bold'} ${block.fontSize}px ${style.fontFamily}`, block.text || 'Bonjour');
+      const context = canvas.getContext('2d')!;
+      const bounds = getCardTextBounds(context, block, style, width, showFrame, frameWidth);
+      const left = Math.max(0, Math.min(width - 1, Math.floor(bounds.left)));
+      const top = Math.max(0, Math.min(height - 1, Math.floor(bounds.top)));
+      const sampleWidth = Math.max(1, Math.min(width - left, Math.ceil(bounds.right - left)));
+      const sampleHeight = Math.max(1, Math.min(height - top, Math.ceil(bounds.bottom - top)));
+      const color = chooseContrastingTextColor(context.getImageData(left, top, sampleWidth, sampleHeight).data);
+      setTextBlocks((blocks) => blocks.map((item) => item.id === block.id ? { ...item, color } : item));
+    } catch (error) {
+      console.error('Couleur adaptée indisponible', error);
+      alert('Impossible d’analyser ce fond. Choisissez une couleur avec le sélecteur.');
+    } finally { setAdaptingColor(false); }
   };
 
   const updateSelectedImage = (updates: Partial<ImageElement>) => {
@@ -1822,122 +1850,13 @@ export default function EditorWithImages() {
                               : 'bg-white text-gray-900 border-gray-300'
                           }`}
                         />
-                        <div className="flex gap-2 mt-2">
-                          <button
-                            onClick={() => updateSelectedBlock({ align: 'left' })}
-                            className={`flex-1 py-2 rounded border ${
-                              selectedBlock.align === 'left'
-                                ? 'bg-white/20 border-white'
-                                : 'bg-gray-700 border-gray-600 hover:bg-gray-600'
-                            }`}
-                            title="Aligner à gauche"
-                          >
-                            <AlignLeft className="w-4 h-4 mx-auto" />
-                          </button>
-                          <button
-                            onClick={() => updateSelectedBlock({ align: 'center' })}
-                            className={`flex-1 py-2 rounded border ${
-                              selectedBlock.align === 'center'
-                                ? 'bg-white/20 border-white'
-                                : 'bg-gray-700 border-gray-600 hover:bg-gray-600'
-                            }`}
-                            title="Centrer"
-                          >
-                            <AlignCenter className="w-4 h-4 mx-auto" />
-                          </button>
-                          <button
-                            onClick={() => updateSelectedBlock({ align: 'right' })}
-                            className={`flex-1 py-2 rounded border ${
-                              selectedBlock.align === 'right'
-                                ? 'bg-white/20 border-white'
-                                : 'bg-gray-700 border-gray-600 hover:bg-gray-600'
-                            }`}
-                            title="Aligner à droite"
-                          >
-                            <AlignRight className="w-4 h-4 mx-auto" />
-                          </button>
-                        </div>
+
                       </div>
 
                       <div className={`rounded-lg p-4 space-y-4 ${darkMode ? 'bg-gray-800' : 'bg-white shadow-sm'}`}>
                         <h3 className="text-lg font-bold">Style de texte</h3>
-                        <TextProperties block={selectedBlock} styles={textStyles} onChange={updateSelectedBlock} />
-                        {/* Text Alignment Controls */}
-                        <div className="flex gap-2 mb-4 p-1 bg-gray-100 dark:bg-gray-700 rounded-lg w-fit mx-auto">
-                          <button
-                            onClick={() => updateSelectedBlock({ align: 'left' })}
-                            className={`p-2 rounded transition-colors ${selectedBlock.align === 'left' ? 'bg-white dark:bg-gray-600 shadow-sm' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}
-                            title="Aligner à gauche"
-                          >
-                            <AlignLeft size={18} />
-                          </button>
-                          <button
-                            onClick={() => updateSelectedBlock({ align: 'center' })}
-                            className={`p-2 rounded transition-colors ${selectedBlock.align === 'center' ? 'bg-white dark:bg-gray-600 shadow-sm' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}
-                            title="Centrer"
-                          >
-                            <AlignCenter size={18} />
-                          </button>
-                          <button
-                            onClick={() => updateSelectedBlock({ align: 'right' })}
-                            className={`p-2 rounded transition-colors ${selectedBlock.align === 'right' ? 'bg-white dark:bg-gray-600 shadow-sm' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}
-                            title="Aligner à droite"
-                          >
-                            <AlignRight size={18} />
-                          </button>
-                        </div>
+                        <TextProperties block={selectedBlock} styles={textStyles} onChange={updateSelectedBlock} onAdaptColor={adaptTextColor} adaptingColor={adaptingColor} canvasWidth={getCardCanvasSize(aspectRatio).width} onImportFont={() => fontInputRef.current?.click()} />
 
-                        <div className="grid grid-cols-2 gap-2">
-                          {Object.entries(textStyles).map(([key, style]) => (
-                            <button
-                              key={key}
-                              onClick={() => updateSelectedBlock({ style: key as any })}
-                              className={`p-2 rounded border text-sm transition-colors ${
-                                selectedBlock.style === key
-                                  ? 'bg-blue-600 border-blue-500 text-white'
-                                  : darkMode 
-                                    ? 'bg-gray-700 border-gray-600 hover:bg-gray-600 text-gray-300' 
-                                    : 'bg-white border-gray-300 hover:bg-gray-100 text-gray-700'
-                              }`}
-                              style={{ fontFamily: style.fontFamily }}
-                            >
-                              {style.name}
-                            </button>
-                          ))}
-                          {customFonts.map((fontName) => (
-                            <button
-                              key={fontName}
-                              onClick={() => updateSelectedBlock({ style: fontName as any })}
-                              className={`p-2 rounded border text-sm transition-colors ${
-                                selectedBlock.style === fontName
-                                  ? 'bg-blue-600 border-blue-500 text-white'
-                                  : darkMode 
-                                    ? 'bg-gray-700 border-gray-600 hover:bg-gray-600 text-gray-300' 
-                                    : 'bg-white border-gray-300 hover:bg-gray-100 text-gray-700'
-                              }`}
-                              style={{ fontFamily: `"${fontName}", sans-serif` }}
-                            >
-                              Ma Police
-                            </button>
-                          ))}
-                          <button
-                            onClick={() => fontInputRef.current?.click()}
-                            className={`p-2 rounded border text-sm transition-colors border-dashed flex items-center justify-center gap-2 ${
-                              darkMode 
-                                ? 'bg-transparent border-gray-500 hover:bg-gray-800 text-gray-400' 
-                                : 'bg-transparent border-gray-400 hover:bg-gray-100 text-gray-600'
-                            }`}
-                          >
-                            <Type size={14} /> Importer
-                          </button>
-                          <input
-                            ref={fontInputRef}
-                            type="file"
-                            accept=".ttf,.otf,.woff,.woff2"
-                            onChange={handleFontUpload}
-                            className="hidden"
-                          />
-                        </div>
                       </div>
 
                       <div className="bg-gray-800 rounded-lg p-4 space-y-4">
@@ -1971,81 +1890,6 @@ export default function EditorWithImages() {
                       </div>
 
                       <div className="bg-gray-800 rounded-lg p-4 space-y-4">
-                        <h3 className="text-lg font-bold">Filtres photo</h3>
-                        <div className="grid grid-cols-2 gap-2">
-                          {['#ffffff', '#000000', '#ff0000', '#fbbf24'].map(
-                            (color) => (
-                              <button
-                                key={color}
-                                onClick={() => updateSelectedBlock({ color })}
-                                className={`w-10 h-10 rounded-full border-2 ${
-                                  selectedBlock.color === color ? 'border-white ring-2 ring-white' : 'border-gray-600'
-                                }`}
-                                style={{ backgroundColor: color }}
-                              />
-                            )
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="bg-gray-800 rounded-lg p-4 space-y-4">
-                        <h3 className="text-lg font-bold">Contour du texte</h3>
-                        <div className="space-y-3">
-                          <label className="flex items-center gap-3">
-                            <input
-                              type="checkbox"
-                              checked={selectedBlock.outlineEnabled ?? textStyles[selectedBlock.style].outline}
-                              onChange={(e) => updateSelectedBlock({ outlineEnabled: e.target.checked })}
-                              className="w-5 h-5 cursor-pointer"
-                            />
-                            <span className="text-sm">Ajouter un contour</span>
-                          </label>
-                          {(selectedBlock.outlineEnabled ?? textStyles[selectedBlock.style].outline) && (
-                            <div>
-                              <label className="text-sm text-gray-300 block mb-2">Épaisseur: {textStyles[selectedBlock.style].outlineWidth || 2}px</label>
-                              <input
-                                type="range"
-                                min="1"
-                                max="10"
-                                value={textStyles[selectedBlock.style]?.outlineWidth || 2}
-                                onChange={(e) => {
-                                  const newStyles = { ...textStyles };
-                                  newStyles[selectedBlock.style] = {
-                                    ...newStyles[selectedBlock.style],
-                                    outlineWidth: Number(e.target.value)
-                                  };
-                                  setTextStyles(newStyles);
-                                }}
-                                className="w-full"
-                              />
-                              <div className="mt-2">
-                                <label className="text-sm text-gray-300 block mb-2">Couleur du contour</label>
-                                <div className="flex gap-2 flex-wrap">
-                                  {['#ffffff', '#000000', '#ff0000', '#fbbf24'].map((color) => (
-                                    <button
-                                      key={color}
-                                      onClick={() => {
-                                        const newStyles = { ...textStyles };
-                                        newStyles[selectedBlock.style] = {
-                                          ...newStyles[selectedBlock.style],
-                                          outlineColor: color
-                                        };
-                                        setTextStyles(newStyles);
-                                      }}
-                                      className={`w-8 h-8 rounded-full border-2 ${
-                                        (textStyles[selectedBlock.style].outlineColor || '#000000') === color ? 'border-white ring-2 ring-white' : 'border-gray-600'
-                                      }`}
-                                      style={{ backgroundColor: color }}
-                                    />
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="bg-gray-800 rounded-lg p-4 space-y-4">
                         <h3 className="text-lg font-bold">Cadre blanc (Image)</h3>
                         <div className="space-y-3">
                           <label className="flex items-center gap-3">
@@ -2073,17 +1917,7 @@ export default function EditorWithImages() {
                         </div>
                       </div>
 
-                      <div className="bg-gray-800 rounded-lg p-4 space-y-4">
-                        <h3 className="text-lg font-bold">Taille: {selectedBlock.fontSize}px</h3>
-                        <input
-                          type="range"
-                          min="18"
-                          max="96"
-                          value={selectedBlock.fontSize}
-                          onChange={(e) => updateSelectedBlock({ fontSize: Number(e.target.value) })}
-                          className="w-full"
-                        />
-                      </div>
+
                     </>
                   )}
                 </div>
@@ -2124,6 +1958,7 @@ export default function EditorWithImages() {
         <SupportAssociation />
       </main>
 
+      <input ref={fontInputRef} type="file" accept=".ttf,.otf,.woff,.woff2" onChange={handleFontUpload} className="hidden" aria-label="Importer une police" />
       <TextAssistantDialog
         open={showTextAssistant}
         themeId={selectedThemeId}
@@ -2271,13 +2106,8 @@ export default function EditorWithImages() {
                     </div>
                     {selectedBlock && (
                       <div>
-                        <TextProperties block={selectedBlock} styles={textStyles} onChange={updateSelectedBlock} />
-                        <p className="mb-2 text-sm font-semibold text-slate-200">Couleur du texte</p>
-                        <div className="flex gap-3">
-                          {['#ffffff', '#000000', '#fbbf24', '#f87171', '#60a5fa'].map((color) => (
-                            <button key={color} onClick={() => updateSelectedBlock({ color })} aria-label={`Choisir ${color}`} className={`h-9 w-9 rounded-full border-2 ${selectedBlock.color === color ? 'border-white ring-2 ring-amber-400' : 'border-slate-500'}`} style={{ backgroundColor: color }} />
-                          ))}
-                        </div>
+                        <TextProperties block={selectedBlock} styles={textStyles} onChange={updateSelectedBlock} onAdaptColor={adaptTextColor} adaptingColor={adaptingColor} canvasWidth={getCardCanvasSize(aspectRatio).width} onImportFont={() => fontInputRef.current?.click()} />
+
                       </div>
                     )}
                     <button onClick={() => { if (!showFrame && frameWidth === 0) setFrameWidth(12); setShowFrame((visible) => !visible); }} aria-pressed={showFrame} className={`min-h-12 w-full rounded-2xl border font-semibold ${showFrame ? 'border-amber-400 bg-amber-400/15 text-amber-200' : 'border-slate-600 bg-slate-800'}`}>▣ {showFrame ? 'Retirer le cadre blanc' : 'Ajouter un cadre blanc'}</button>
