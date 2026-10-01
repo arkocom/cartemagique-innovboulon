@@ -34,6 +34,7 @@ export default function Landing() {
   const [isStandalone, setIsStandalone] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [showInstallHelp, setShowInstallHelp] = useState(false);
+  const [copyStatus, setCopyStatus] = useState('');
 
   useEffect(() => {
     const displayMode = window.matchMedia("(display-mode: standalone)");
@@ -82,6 +83,15 @@ export default function Landing() {
     const { outcome } = await deferredPrompt.userChoice;
     setDeferredPrompt(null);
     if (outcome !== "accepted") setShowInstallHelp(true);
+  };
+
+  const copyApplicationLink = async () => {
+    try {
+      await navigator.clipboard.writeText('https://cartemagique.innov-boulon.fr/');
+      setCopyStatus('Lien copié : vous pouvez le coller dans votre message.');
+    } catch {
+      setCopyStatus('Sélectionnez et copiez l’adresse affichée ci-dessous.');
+    }
   };
 
   return (
@@ -385,6 +395,23 @@ export default function Landing() {
                 </span>
               </div>
             </div>
+          </div>
+        </section>
+        <section className="section" id="partager" aria-labelledby="share-app-title">
+          <div className="wrap share-app-section">
+            <div>
+              <span className="kicker">Faites découvrir CarteMagique</span>
+              <h2 id="share-app-title" className="sec-title">Un petit lien, de belles attentions.</h2>
+              <p className="sec-sub">Partagez l’application avec vos proches. Le QR code ouvre directement CarteMagique : parfait pour vos flyers et les ateliers.</p>
+              <div className="share-app-actions">
+                <button type="button" onClick={copyApplicationLink} className="btn btn-primary">Copier le lien de l’application</button>
+                <a href="/share/cartemagique-qr.png" download="CarteMagique-QR.png" className="btn btn-ghost">Télécharger le QR en PNG</a>
+                <a href="/share/cartemagique-qr.svg" download="CarteMagique-QR.svg" className="btn btn-ghost">QR en SVG pour l’impression</a>
+              </div>
+              <label className="share-app-link">Adresse de l’application<input readOnly value="https://cartemagique.innov-boulon.fr/" aria-label="Adresse de l’application à partager" onFocus={(event) => event.currentTarget.select()} /></label>
+              <p role="status" className="share-app-status">{copyStatus}</p>
+            </div>
+            <figure className="share-app-qr"><img src="/share/cartemagique-qr.svg" alt="QR code vers https://cartemagique.innov-boulon.fr/" width="222" height="222" loading="lazy" /><figcaption>Scannez pour créer votre carte</figcaption></figure>
           </div>
         </section>
         <section className="applications-network" aria-labelledby="applications-title">
