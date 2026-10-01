@@ -442,6 +442,10 @@ export default function EditorWithImages() {
 
   }, []);
 
+  useEffect(() => {
+    if (showCanvas) window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [showCanvas]);
+
   // Auto-save effects
   useEffect(() => {
     if (isClient) {
@@ -812,10 +816,6 @@ export default function EditorWithImages() {
   };
 
   const handleDeleteTextBlock = (id: string) => {
-    if (textBlocks.length === 1) {
-      alert('Vous devez garder au moins un bloc de texte.');
-      return;
-    }
     setTextBlocks(textBlocks.filter((b) => b.id !== id));
     if (selectedBlockId === id) {
       setSelectedBlockId(textBlocks.find((b) => b.id !== id)?.id || '');
@@ -1346,7 +1346,7 @@ export default function EditorWithImages() {
               </p>
             </div>
 
-            <ThemeSelectorComplete />
+            <ThemeSelectorComplete onPersonalize={() => setShowCanvas(true)} />
 
             <div className="text-center mt-10">
               <Button
@@ -2135,7 +2135,7 @@ export default function EditorWithImages() {
             <div className="mx-auto grid max-w-md grid-cols-4 gap-1">
               {[
                 { id: 'text', label: 'Texte', icon: Type },
-                { id: 'photo', label: 'Photo', icon: ImagePlus },
+                { id: 'photo', label: 'Photos / 😊', icon: ImagePlus },
                 { id: 'style', label: 'Style', icon: SlidersHorizontal },
                 { id: 'share', label: 'Finaliser', icon: Send },
               ].map(({ id, label, icon: Icon }) => (
@@ -2159,7 +2159,7 @@ export default function EditorWithImages() {
                     <p className="text-xs font-semibold uppercase tracking-wider text-amber-300">Modification rapide</p>
                     <h3 className="text-lg font-bold">
                       {mobileTool === 'text' && 'Votre message'}
-                      {mobileTool === 'photo' && 'Photos & collage'}
+                      {mobileTool === 'photo' && 'Photos, émoticônes & collage'}
                       {mobileTool === 'style' && 'Style de la carte'}
                       {mobileTool === 'share' && 'Finaliser votre carte'}
                     </h3>
@@ -2171,6 +2171,15 @@ export default function EditorWithImages() {
                   <div className="space-y-3">
                     <button onClick={() => setShowTextAssistant(true)} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-purple-600 font-bold text-white active:scale-[0.98]"><Wand2 size={19} /> Assistant de texte</button>
                     <p className="-mt-1 text-center text-xs text-slate-400">3 messages personnalisés, créés sur votre appareil.</p>
+                    <div className="space-y-2" aria-label="Blocs de texte de la carte">
+                      <p className="text-sm text-slate-300">Choisissez un texte pour le modifier, ou supprimez-le.</p>
+                      {textBlocks.map((block, index) => <div key={block.id} className="flex items-center gap-2">
+                        <button type="button" aria-pressed={selectedBlockId === block.id} onClick={() => { setSelectedBlockId(block.id); setSelectedImageId(null); }} className={`min-h-12 min-w-0 flex-1 rounded-xl border p-3 text-left ${selectedBlockId === block.id ? 'border-amber-400 bg-amber-400/15' : 'border-slate-600 bg-slate-800'}`}>
+                          <span className="block text-xs">Texte {index + 1}</span><span className="block truncate">{block.text || 'Texte vide'}</span>
+                        </button>
+                        <button type="button" aria-label={`Supprimer le texte ${index + 1}`} onClick={() => handleDeleteTextBlock(block.id)} className="min-h-12 rounded-xl border border-red-400/50 bg-red-500/15 px-3 text-sm font-semibold text-red-300">Supprimer</button>
+                      </div>)}
+                    </div>
                     {selectedBlock ? (
                       <>
                         <textarea
@@ -2200,7 +2209,7 @@ export default function EditorWithImages() {
                         </div>
                       </>
                     ) : (
-                      <p className="rounded-2xl bg-slate-800 p-4 text-sm text-slate-300">Touchez un bloc de texte sur la carte pour le modifier.</p>
+                      <p className="rounded-2xl bg-slate-800 p-4 text-sm text-slate-300">Ajoutez un texte pour écrire votre message.</p>
                     )}
                     <button onClick={handleAddTextBlock} className="min-h-12 w-full rounded-2xl bg-emerald-600 font-bold text-white active:scale-[0.98]">+ Ajouter un texte</button>
                   </div>
@@ -2208,6 +2217,12 @@ export default function EditorWithImages() {
 
                 {mobileTool === 'photo' && (
                   <div className="space-y-3">
+                    <div>
+                      <h4 className="mb-2 font-semibold">Émoticônes et stickers</h4>
+                      <div className="grid grid-cols-6 gap-2">
+                        {STICKERS.map((sticker) => <button type="button" key={sticker} aria-label={`Ajouter ${sticker}`} onClick={() => { addSticker(sticker); setMobileTool(null); }} className="flex min-h-12 items-center justify-center rounded-xl border border-slate-600 bg-slate-800 text-2xl" style={{ fontFamily: '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif' }}>{sticker}</button>)}
+                      </div>
+                    </div>
                     <button onClick={() => fileInputRef.current?.click()} className="flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 font-bold text-white active:scale-[0.98]"><Upload size={20} /> Ajouter une ou plusieurs photos</button>
                     <div className="grid grid-cols-4 gap-2">
                       {[1, 2, 3, 4].map((count) => {
