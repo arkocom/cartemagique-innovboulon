@@ -41,8 +41,8 @@ export const themes: ThemeWithPreview[] = [
   // 🎄 Noël (10)
   createTheme('noel-1', 'Noël 1', 'Sapin lumineux', '/backgrounds/hiver.webp', '/backgrounds/hiver.webp'),
   createTheme('noel-2', 'Noël 2', 'Décor doré', '/backgrounds/collection/noel-2.webp', '/backgrounds/previews/noel-2.webp'),
-  createTheme('noel-3', 'Noël 3', 'Cadeaux', '/backgrounds/collection/noel-3.webp', '/backgrounds/previews/noel-3.webp'),
-  createTheme('noel-4', 'Noël 4', 'Guirlandes', '/backgrounds/collection/noel-4.webp', '/backgrounds/previews/noel-4.webp'),
+  createTheme('noel-3', 'Noël 3', 'Cadeaux', '/backgrounds/collection/noel-3-v2.webp', '/backgrounds/previews/noel-3-v2.webp'),
+  createTheme('noel-4', 'Noël 4', 'Guirlandes', '/backgrounds/collection/noel-4-v2.webp', '/backgrounds/previews/noel-4-v2.webp'),
   createTheme('noel-5', 'Noël 5', 'Boules', '/backgrounds/collection/noel-5.webp', '/backgrounds/previews/noel-5.webp'),
   createTheme('noel-6', 'Noël 6', 'Scandinave', '/backgrounds/collection/noel-6.webp', '/backgrounds/previews/noel-6.webp'),
   createTheme('noel-7', 'Noël 7', 'Ruelle festive', '/backgrounds/collection/noel-7.webp', '/backgrounds/previews/noel-7.webp'),

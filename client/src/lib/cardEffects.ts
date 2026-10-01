@@ -8,6 +8,7 @@ export function eventForTheme(id: string): CardEvent {
   if (id.includes('amour') || id === 'famille-1') return 'amour';
   if (id.includes('mariage')) return 'mariage';
   if (id.includes('merci')) return 'merci';
+  if (id.startsWith('famille-')) return 'merci';
   if (id.startsWith('nouvel-an') || id.startsWith('pro') || id.startsWith('artdeco')) return 'nouvel-an';
   if (id.startsWith('hiver') || id.startsWith('nature')) return 'hiver';
   return 'noel';

@@ -1,5 +1,5 @@
 import { drawCardEffects, type CardAnimation, type CardEvent } from './cardEffects';
-import { scheduleCardMusic } from './cardMusic';
+import { scheduleCardMusic, type MusicStyle } from './cardMusic';
 
 export function supportedVideoMime(withAudio = true): string | undefined {
   if (typeof MediaRecorder === 'undefined') return undefined;
@@ -10,7 +10,7 @@ export function supportedVideoMime(withAudio = true): string | undefined {
   return [...mp4, 'video/webm;codecs=vp8,opus', 'video/webm;codecs=vp9,opus', 'video/webm'].find(type => MediaRecorder.isTypeSupported(type));
 }
 
-export async function recordCardVideo(base: HTMLCanvasElement, options: { animation: CardAnimation; event: CardEvent; music: boolean; volume: number; duration: number; audioContext?: AudioContext; signal: AbortSignal; onProgress: (value: number) => void }): Promise<Blob> {
+export async function recordCardVideo(base: HTMLCanvasElement, options: { animation: CardAnimation; event: CardEvent; musicStyle?: MusicStyle; music: boolean; volume: number; duration: number; audioContext?: AudioContext; signal: AbortSignal; onProgress: (value: number) => void }): Promise<Blob> {
   const mimeType = supportedVideoMime(options.music);
   if (!mimeType || !HTMLCanvasElement.prototype.captureStream) throw new Error('L’export vidéo n’est pas disponible dans ce navigateur. Essayez Chrome, Edge ou Safari récent.');
   if (options.signal.aborted) throw new DOMException('Export annulé', 'AbortError');
@@ -30,7 +30,7 @@ export async function recordCardVideo(base: HTMLCanvasElement, options: { animat
       await audioContext.resume();
       const audioDestination = audioContext.createMediaStreamDestination();
       for (const track of audioDestination.stream.getAudioTracks()) stream.addTrack(track);
-      stopMusic = scheduleCardMusic(audioContext, audioDestination, options.event, options.duration, options.volume);
+      stopMusic = scheduleCardMusic(audioContext, audioDestination, options.musicStyle ?? options.event, options.duration, options.volume);
     }
     if (options.signal.aborted) throw new DOMException('Export annulé', 'AbortError');
     recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 2200000, audioBitsPerSecond: 128000 });
